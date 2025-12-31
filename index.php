@@ -1,22 +1,12 @@
 <?php
 
-namespace x\s {
-    function allow() {
+namespace x\hub {
+    function pact() {
         if (!($h = \status()[1]['authorization'] ?? "") || 0 !== \strncasecmp($h, 'bearer ', 7) || "" === ($token = \trim(\substr($h, 7)))) {
-            return 0;
+            return 401;
         }
         \extract(\lot(), \EXTR_SKIP);
-        $pepper = (string) ($state->x->s->pepper ?? "");
-        if (false === v($token, $pepper)) {
-            return 0;
-        }
-        return 1;
-    }
-    function b64v(string $v) {
-        return \base64_decode(\strtr($v, '-_', '+/'));
-    }
-    function b64x(string $v) {
-        return \rtrim(\strtr(\base64_encode($v), '+/', '-_'), '=');
+        return v($token, (string) ($state->x->hub->pepper ?? ""));
     }
     function route($content, $path, $query, $hash) {
         if ($content || !$path) {
@@ -24,13 +14,13 @@ namespace x\s {
         }
         \extract(\lot(), \EXTR_SKIP);
         $path = \trim($path, '/');
-        $route = \trim($state->x->s->route ?? 's', '/');
+        $route = \trim($state->x->hub->route ?? 'hub', '/');
         if (0 !== \strpos($path, $route . '/')) {
             return $content;
         }
-        return \Hook::fire('route.s', [$content, '/' . \substr($path, \strlen($route) + 1), $query, $hash]);
+        return \Hook::fire('route.hub', [$content, '/' . \substr($path, \strlen($route) + 1), $query, $hash]);
     }
-    function route__s($content, $path, $query, $hash) {
+    function route__hub($content, $path, $query, $hash) {
         \type('application/json');
         foreach (\step($path, '/') as $k => $v) {
             if (\is_file($file = __DIR__ . \D . 'index' . \D . 'route' . \strtr($v, '/', \D) . '.php')) {
@@ -69,21 +59,30 @@ namespace x\s {
     function v(string $token, string $pepper) {
         $r = \explode('.', $token);
         if (3 !== \count($r)) {
-            return false; // Invalid token format
+            return 401; // Invalid token format
         }
-        if (!\hash_equals($r[2], b64x(\hash_hmac('sha256', $r[0] . '.' . $r[1], $pepper, true)))) {
-            return false; // Invalid token signature
+        if (!\hash_equals($r[2], b64\x(\hash_hmac('sha256', $r[0] . '.' . $r[1], $pepper, true)))) {
+            return 401; // Invalid token signature
         }
-        $r = \json_decode(b64v($r[1]), true);
+        $r = \json_decode(b64\v($r[1]), true);
         if (($r['exp'] ?? 0) < \time()) {
-            return false; // Stale token
+            return 401; // Stale token
         }
         return $r;
     }
-    function x(array $lot, string $pepper) {
-        $r = b64x(\json_encode(['alg' => 'HS256', 'typ' => 'JWT'])) . '.' . b64x(\json_encode($lot));
-        return $r . '.' . b64x(\hash_hmac('sha256', $r, $pepper, true));
+    function x(array $data, string $pepper) {
+        $r = b64\x(\json_encode(['alg' => 'HS256', 'typ' => 'JWT'])) . '.' . b64\x(\json_encode($data));
+        return $r . '.' . b64\x(\hash_hmac('sha256', $r, $pepper, true));
     }
     \Hook::set('route', __NAMESPACE__ . "\\route", 0);
-    \Hook::set('route.s', __NAMESPACE__ . "\\route__s", 100);
+    \Hook::set('route.hub', __NAMESPACE__ . "\\route__hub", 100);
+}
+
+namespace x\hub\b64 {
+    function v(string $v) {
+        return \base64_decode(\strtr($v, '-_', '+/'));
+    }
+    function x(string $v) {
+        return \rtrim(\strtr(\base64_encode($v), '+/', '-_'), '=');
+    }
 }

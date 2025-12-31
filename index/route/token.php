@@ -7,6 +7,6 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
 $key = substr(trim($path, '/'), strlen(basename(__FILE__, '.php')) + 1);
 
 return [
-    'lot' => array_replace("" !== $key ? ['key' => $key] : [], ['value' => token($key)]),
+    'data' => array_replace("" !== $key ? ['key' => $key] : [], ['value' => token($key)]),
     'status' => 200
 ];

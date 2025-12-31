@@ -1,7 +1,7 @@
 <?php
 
-if (!x\s\allow()) {
-    return ['status' => 401];
+if (is_int($r = x\hub\pact())) {
+    return ['status' => $r];
 }
 
 if ('GET' !== $_SERVER['REQUEST_METHOD']) {
@@ -19,7 +19,7 @@ if (!is_file($file = LOT . D . $path)) {
 $file = new File($file);
 
 return [
-    'lot' => [
+    'data' => [
         '_seal' => $file->_seal,
         '_size' => $file->_size,
         'name' => $file->name,
@@ -30,5 +30,6 @@ return [
         'url' => $file->url,
         'x' => $file->x
     ],
+    'pact' => $r,
     'status' => 200
 ];

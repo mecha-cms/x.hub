@@ -31,16 +31,18 @@ if (0 === strpos($key, '@')) {
     }
     // TODO: Generate refresh token
     if ($valid) {
-        $pepper = (string) ($state->x->s->pepper ?? "");
+        $pepper = (string) ($state->x->hub->pepper ?? "");
         $t = time();
         return [
-            'lot' => $lot = [
-                'exp'  => $t + 60, // 1 minute
-                'iat'  => $t,
-                'sub'  => '@' . $key
+            'pact' => $pact = [
+                'aud' => "",
+                'exp' => $t + 60, // 1 minute
+                'iat' => $t,
+                'jti' => \bin2hex(\random_bytes(16)),
+                'sub' => '@' . $key
             ],
             'status' => 200,
-            'token' => x\s\x($lot, $pepper)
+            'token' => x\hub\x($pact, $pepper)
         ];
     }
     return ['status' => 401];
