@@ -8,7 +8,9 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
     return ['status' => 405];
 }
 
-if ("" === ($path = substr($path, 6))) { // `strlen('/item/')`
+$path = $_GET['of'] ?? "";
+
+if (!is_string($path) || "" === $path) {
     return ['status' => 400];
 }
 

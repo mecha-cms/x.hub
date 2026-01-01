@@ -43,6 +43,8 @@ that can be used across the entire application:
 ~~~ .js
 const form = document.forms[0];
 
+let accessToken;
+
 form.addEventListener('submit', function (e) {
     let key = this.elements.key.value,
         pass = this.elements.pass.value;
@@ -57,7 +59,7 @@ form.addEventListener('submit', function (e) {
         body: JSON.stringify({ key, pass })
     }).then(r => r.json()).then(lot => {
         // Store the access token
-        localStorage.setItem('accessToken', lot.token);
+        accessToken = lot.token;
         // Redirect to the asset manager page… (for example)
         history.pushState({}, "", '/panel/asset/1');
     }).catch(console.error);
@@ -69,15 +71,15 @@ Unlike signing in through the default user form, the server does not store the u
 use the obtained token to unlock other routes by sending it via the
 [`authorization`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Authorization "Authorization Header · MDN") header.
 
-For example, if you are already on the asset manager page, your application will list the available asset files and
+For example, if you are already on the asset manager page, your application want to list the available asset files and
 folders on that page. To do that, you will need to access the route that lists the available files and folders in the
-`./lot/asset` folder:
+`.\lot\asset` folder:
 
 ~~~ .js
-fetch('/hub/items/asset?chunk=10&part=1', {
+fetch('/hub/items?chunk=10&of=asset&part=1', {
     method: 'GET',
     headers: {
-        'authorization': 'bearer ' + localStorage.getItem('accessToken'),
+        'authorization': 'bearer ' + accessToken,
         'content-type': 'application/json'
     }
 }).then(r => r.json()).then(lot => {
