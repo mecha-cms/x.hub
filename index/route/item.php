@@ -8,7 +8,7 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
     return ['status' => 405];
 }
 
-if ("" === ($path = substr($path, 6))) { // `strlen('/file/')`
+if ("" === ($path = substr($path, 6))) { // `strlen('/item/')`
     return ['status' => 400];
 }
 

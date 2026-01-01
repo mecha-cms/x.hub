@@ -7,3 +7,86 @@ author: Taufik Nurrohman
 type: Markdown
 version: 1.0.0
 ...
+
+This extension provides [RPC](https://en.wikipedia.org/wiki/Remote_procedure_call "Remote Procedure Call · Wikipedia")
+functionality, which allows third-party applications to perform
+[CRUD](https://en.wikipedia.org/wiki/Create,_read,_update_and_delete "Create, Read, Update, and Delete · Wikipedia")
+operations on files and folders in the `.\lot` folder. Additionally, special files such as `.\favicon.ico` and
+`.\state.php`, that are located above the `.\lot` folder can be read and edited using more specific routes.
+
+To allow remote operations on the server, the application must be verified as an existing user. This process involves
+sending a user’s key and pass to the server for validation. First, the user’s key and pass are sent via a special route
+to the server for validation. If the credentials are valid, the server will issue a token that can be used to access
+other routes.
+
+Create a user verification form and make it the home page of your application:
+
+~~~ .html
+<form method="post">
+  <p>
+    <input name="key" type="text">
+  </p>
+  <p>
+    <input name="pass" type="password">
+  </p>
+  <p>
+    <button type="submit">
+      Verify
+    </button>
+  </p>
+</form>
+~~~
+
+Add an event listener to the form to verify the user account. This will allow your application to obtain an access token
+that can be used across the entire application:
+
+~~~ .js
+const form = document.forms[0];
+
+form.addEventListener('submit', function (e) {
+    let key = this.elements.key.value,
+        pass = this.elements.pass.value;
+    // Force `@` prefix
+    if ('@' !== key[0]) {
+        key = '@' + key;
+    }
+    // Verify user account…
+    fetch('/hub/user', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ key, pass })
+    }).then(r => r.json()).then(lot => {
+        // Store the access token
+        localStorage.setItem('accessToken', lot.token);
+        // Redirect to the asset manager page… (for example)
+        history.pushState({}, "", '/panel/asset/1');
+    }).catch(console.error);
+    e.preventDefault();
+}, false);
+~~~
+
+Unlike signing in through the default user form, the server does not store the user’s credentials. Your application will
+use the obtained token to unlock other routes by sending it via the
+[`authorization`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Authorization "Authorization Header · MDN") header.
+
+For example, if you are already on the asset manager page, your application will list the available asset files and
+folders on that page. To do that, you will need to access the route that lists the available files and folders in the
+`./lot/asset` folder:
+
+~~~ .js
+fetch('/hub/items/asset?chunk=10&part=1', {
+    method: 'GET',
+    headers: {
+        'authorization': 'bearer ' + localStorage.getItem('accessToken'),
+        'content-type': 'application/json'
+    }
+}).then(r => r.json()).then(lot => {
+    const list = document.createElement('ul');
+    lot.data.forEach(v => {
+        const listItem = document.createElement('li');
+        // …
+        list.append(listItem);
+    });
+    container.replaceChildren(list);
+}).catch(console.error);
+~~~
