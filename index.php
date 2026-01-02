@@ -1,13 +1,6 @@
 <?php
 
 namespace x\hub {
-    function pact() {
-        if (!($h = \status()[1]['authorization'] ?? "") || 0 !== \strncasecmp($h, 'bearer ', 7) || "" === ($token = \trim(\substr($h, 7)))) {
-            return 401;
-        }
-        \extract(\lot(), \EXTR_SKIP);
-        return v($token, (string) ($state->x->hub->pepper ?? ""));
-    }
     function route($content, $path, $query, $hash) {
         if ($content || !$path) {
             return $content;
@@ -55,6 +48,29 @@ namespace x\hub {
             'pragma' => 'no-cache'
         ]);
         return \json_encode(['status' => $status]);
+    }
+    function status() {
+        if (!($h = \status()[1]['authorization'] ?? "") || 0 !== \strncasecmp($h, 'bearer ', 7) || "" === ($token = \trim(\substr($h, 7)))) {
+            return 401;
+        }
+        \extract(\lot(), \EXTR_SKIP);
+        return v($token, (string) ($state->x->hub->pepper ?? ""));
+    }
+    function user() {
+        if (\is_int($r = status())) {
+            return ['status' => -1];
+        }
+        if (0 === \strpos($key = $r['sub'], '@')) {
+            $user = new \User(\LOT . \D . 'user' . \D . \substr($key, 1) . '.page');
+            return [
+                'author' => $user->author,
+                'name' => $user->name,
+                'status' => $user->status,
+                'token' => \bin2hex(\random_bytes(16)),
+                'x' => $user->x
+            ];
+        }
+        return ['status' => -1];
     }
     function v(string $token, string $pepper) {
         $r = \explode('.', $token);

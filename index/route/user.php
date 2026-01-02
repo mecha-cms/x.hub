@@ -33,19 +33,26 @@ if (0 === strpos($key, '@')) {
             return ['status' => 401];
         }
     }
+    $now = time();
     $pepper = (string) ($state->x->hub->pepper ?? "");
-    $t = time();
+    $user = new User($file);
+    $user = [
+        'author' => $user->author,
+        'name' => $user->name,
+        'status' => $user->status,
+        'token' => bin2hex(random_bytes(16)),
+        'x' => $user->x
+    ];
     return [
-        'data' => ['key' => bin2hex(random_bytes(16))],
-        'pact' => $pact = [
+        'status' => 200,
+        'token' => x\hub\x([
             'aud' => "",
-            'exp' => $t + 60, // 1 minute
-            'iat' => $t,
+            'exp' => $now + 600, // 10 minute(s) from now
+            'iat' => $now,
             'jti' => bin2hex(random_bytes(16)),
             'sub' => '@' . $key
-        ],
-        'status' => 200,
-        'token' => x\hub\x($pact, $pepper)
+        ], $pepper),
+        'user' => $user
     ];
 }
 

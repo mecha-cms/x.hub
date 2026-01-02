@@ -76,7 +76,7 @@ folders on that page. To do that, you will need to access the route that lists t
 `.\lot\asset` folder:
 
 ~~~ .js
-fetch('/hub/items?chunk=10&of=asset&part=1', {
+fetch('/hub/data?chunk=10&of=asset&part=1', {
     method: 'GET',
     headers: {
         'authorization': 'bearer ' + accessToken,
