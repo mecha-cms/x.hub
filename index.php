@@ -16,7 +16,7 @@ namespace x\hub {
     function route__hub($content, $path, $query, $hash) {
         \type('application/json');
         foreach (\step($path, '/') as $k => $v) {
-            if (\is_file($file = __DIR__ . \D . 'index' . \D . 'route' . \strtr($v, '/', \D) . '.php')) {
+            if (\is_file($file = __DIR__ . \D . 'r' . \strtr($v, '/', \D) . '.php')) {
                 $r = (function ($f, $path, $query, $hash) {
                     \extract(\lot(), \EXTR_SKIP);
                     try {
@@ -54,19 +54,28 @@ namespace x\hub {
             return 401;
         }
         \extract(\lot(), \EXTR_SKIP);
-        return v($token, (string) ($state->x->hub->pepper ?? ""));
+        if (\is_int($r = v($token, (string) ($state->x->hub->pepper ?? "")))) {
+            return $r;
+        }
+        if (0 === \strpos($key = $r['sub'], '@')) {
+            if (null === ($tok = \content(\LOT . \D . 'user' . \D . \substr($key, 1) . \D . '.hub' . \D . $r['jti']))) {
+                return 401;
+            }
+            $r['tok'] = $tok;
+        }
+        return $r;
     }
     function user($r) {
         if (\is_int($r)) {
             return ['status' => -1];
         }
         if (0 === \strpos($key = $r['sub'], '@')) {
-            $user = new \User(\LOT . \D . 'user' . \D . \substr($key, 1) . '.page');
+            $user = new \User(($folder = \LOT . \D . 'user' . \D . \substr($key, 1)) . '.page');
             return [
                 'author' => $user->author,
                 'name' => $user->name,
                 'status' => $user->status,
-                'token' => \bin2hex(\random_bytes(16)),
+                'token' => $r['tok'] ?? null,
                 'x' => $user->x
             ];
         }

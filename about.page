@@ -57,9 +57,9 @@ form.addEventListener('submit', function (e) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ key, pass })
-    }).then(r => r.json()).then(lot => {
+    }).then(r => r.json()).then(r => {
         // Store the access token
-        accessToken = lot.token;
+        accessToken = r.token;
         // Redirect to the asset manager page… (for example)
         history.pushState({}, "", '/panel/asset/1');
     }).catch(console.error);
@@ -82,9 +82,9 @@ fetch('/hub/data?chunk=10&of=asset&part=1', {
         'authorization': 'bearer ' + accessToken,
         'content-type': 'application/json'
     }
-}).then(r => r.json()).then(lot => {
+}).then(r => r.json()).then(r => {
     const list = document.createElement('ul');
-    lot.data.forEach(v => {
+    r.data.lot.forEach(v => {
         const listItem = document.createElement('li');
         // …
         list.append(listItem);
