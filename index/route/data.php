@@ -10,20 +10,20 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
 
 $chunk = $_GET['chunk'] ?? 5;
 $deep = $_GET['deep'] ?? 0;
-$of = $_GET['of'] ?? "";
 $part = $_GET['part'] ?? 1;
+$path = substr($path, 6); // `strlen('/data/')`
 $sort = $_GET['sort'] ?? [1, 'route'];
 $x = $_GET['x'] ?? null;
 
-if (!is_string($of) || "" === $of) {
+if (!is_string($path) || "" === $path) {
     return ['status' => 400];
 }
 
-if (!$of = path(LOT . D . $of)) {
+if (!$path = path(LOT . D . $path)) {
     return ['status' => 404];
 }
 
-$of = ($folder = is_dir($of)) ? new Folder($of) : new File($of);
+$of = ($folder = is_dir($path)) ? new Folder($path) : new File($path);
 
 $data = [
     '_seal' => $of->_seal,
@@ -38,9 +38,29 @@ $data = [
 
 if ($folder) {
     $data['lot'] = [];
-    foreach (g($of, $x, $deep) as $v) {
-        $data['lot'][] = ['data' => long('/hub/data?of=' . urlencode(substr($v, strlen(LOT . D))))];
+    foreach (g($of->path, $x, $deep) as $k => $v) {
+        $r = '/' . substr($k, strlen(LOT . D));
+        $value = [
+            'data' => Hook::fire('link', ['/hub/data' . $r]),
+            'is' => [
+                'file' => 1 === $v,
+                'folder' => 0 === $v
+            ]
+        ];
+        if (1 === $v) {
+            $f = new File($k);
+            $value['blob'] = Hook::fire('link', ['/hub/blob' . $r]);
+        } else {
+            $f = new Folder($k);
+        }
+        $value['_seal'] = $f->seal;
+        $value['_size'] = $f->_size;
+        $value['seal'] = $f->seal;
+        $value['size'] = $f->size;
+        $data['lot'][] = $value;
     }
+} else {
+    $data['blob'] = Hook::fire('link', ['/hub/blob' . $of->route]);
 }
 
 asort($data);
@@ -48,5 +68,5 @@ asort($data);
 return [
     'data' => $data,
     'status' => 200,
-    'user' => x\hub\user()
+    'user' => x\hub\user($status)
 ];

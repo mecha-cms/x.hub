@@ -56,8 +56,8 @@ namespace x\hub {
         \extract(\lot(), \EXTR_SKIP);
         return v($token, (string) ($state->x->hub->pepper ?? ""));
     }
-    function user() {
-        if (\is_int($r = status())) {
+    function user($r) {
+        if (\is_int($r)) {
             return ['status' => -1];
         }
         if (0 === \strpos($key = $r['sub'], '@')) {
