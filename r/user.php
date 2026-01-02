@@ -39,24 +39,28 @@ if (0 === strpos($key, '@')) {
         }
     }
     delete($try_file);
-    $now = time();
+    $iat = time();
     $pepper = (string) ($state->x->hub->pepper ?? "");
     $user = new User($file);
     $user = [
         'author' => $user->author,
         'name' => $user->name,
         'status' => $user->status,
-        'token' => ($token = content($token_file = $folder . D . '.hub' . D . ($token_key = bin2hex(random_bytes(8)))) ?? bin2hex(random_bytes(16))),
+        'token' => ($token = content($token_file = $folder . D . '.hub' . D . ($jti = bin2hex(random_bytes(8)))) ?? bin2hex(random_bytes(16))),
         'x' => $user->x
     ];
+    // A refresh token file must be stored on the server to support the “refresh token” feature. Its name is based on
+    // the `jti` field value in the JSON Web Token (JWT) payload. The rule is simple: If a refresh token exists in the
+    // current user data, but the associated JWT’s `jti` field value file does not exist, then the JWT token cannot be
+    // refreshed using it.
     content($token_file, $token, 0600);
     return [
         'status' => 200,
         'token' => x\hub\x([
             'aud' => "", // TODO
-            'exp' => $now + 600, // 10 minute(s) from now
-            'iat' => $now,
-            'jti' => $token_key,
+            'exp' => $iat + 600, // 10 minute(s) from now
+            'iat' => $iat,
+            'jti' => $jti,
             'sub' => $key
         ], $pepper),
         'user' => $user

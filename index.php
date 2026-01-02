@@ -58,6 +58,9 @@ namespace x\hub {
             return $r;
         }
         if (0 === \strpos($key = $r['sub'], '@')) {
+            // Deleting the associated JWT file based on its `jti` field value will automatically reject the JWT token,
+            // even if it has not yet expired. This can be used to create a “log out” feature for JWT, which would not
+            // be possible with its native state-less design alone.
             if (null === ($tok = \content(\LOT . \D . 'user' . \D . \substr($key, 1) . \D . '.hub' . \D . $r['jti']))) {
                 return 401;
             }
