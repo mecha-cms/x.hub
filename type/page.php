@@ -1,0 +1,3 @@
+<?php
+
+$r['type'] = 'page';

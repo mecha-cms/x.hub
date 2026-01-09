@@ -16,7 +16,7 @@ namespace x\hub {
     function route__hub($content, $path, $query, $hash) {
         \type('application/json');
         foreach (\step($path, '/') as $k => $v) {
-            if (\is_file($file = __DIR__ . \D . 'r' . \strtr($v, '/', \D) . '.php')) {
+            if (\is_file($file = __DIR__ . \D . 'route' . \strtr($v, '/', \D) . '.php')) {
                 $r = (function ($f, $path, $query, $hash) {
                     \extract(\lot(), \EXTR_SKIP);
                     try {
@@ -25,8 +25,20 @@ namespace x\hub {
                         return ['e' => $e->getMessage(), 'status' => 400];
                     }
                 })($file, $path, $query, $hash);
-                if (null === $r) {
-                    return $content; // Should display 404 page
+                if (\is_string($type = $_GET['type'] ?? 0)) {
+                    foreach (\step($type, '/') as $k => $v) {
+                        if (\is_file($file = __DIR__ . \D . 'type' . \D . \strtr($v, '/', \D) . '.php')) {
+                            (function ($f, $path, $query, $hash) use (&$r) {
+                                \extract(\lot(), \EXTR_SKIP);
+                                try {
+                                    require $f;
+                                } catch (\Throwable $e) {
+                                    $r['e'] = $e->getMessage();
+                                    $r['status'] = 400;
+                                }
+                            })($file, $path, $query, $hash);
+                        }
+                    }
                 }
                 if (\is_int($status = $r['status'] ?? 0) && $status >= 100 && $status <= 599) {
                     \status($status, \array_replace([

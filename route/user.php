@@ -53,14 +53,14 @@ if (0 === strpos($key, '@')) {
         'author' => $user->author,
         'name' => $user->name,
         'status' => $user->status,
-        'token' => ($token = content($token_file = $folder . D . '.hub' . D . ($id = bin2hex(random_bytes(8)))) ?? bin2hex(random_bytes(16))),
+        'token' => ($token_value = content($token_file = $folder . D . '.hub' . D . ($id = bin2hex(random_bytes(8)))) ?? bin2hex(random_bytes(16))),
         'x' => $user->x
     ];
     // A refresh token file must be stored on the server to support the “refresh token” feature. Its name is based on
     // the `jti` field value in the JSON Web Token (JWT) payload. The rule is simple: If a refresh token exists in the
     // current user data, but the associated JWT’s `jti` field value file does not exist, then the JWT token cannot be
     // refreshed using it.
-    content($token_file, $token, 0600);
+    content($token_file, $token_value, 0600);
     return [
         'status' => 200,
         'token' => x\hub\x([

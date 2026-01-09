@@ -19,6 +19,8 @@ sending a user’s key and pass to the server for validation. First, the user’
 to the server for validation. If the credentials are valid, the server will issue a token that can be used to access
 other routes.
 
+### Usage
+
 Create a user verification form and make it the home page of your application:
 
 ~~~ .html
@@ -86,7 +88,7 @@ fetch('/hub/data/asset?chunk=10&part=1', {
     }
 }).then(r => r.json()).then(r => {
     const list = document.createElement('ul');
-    r.data.lot.forEach(v => {
+    r.lot.total > 0 && r.lot.lot.forEach(v => {
         const listItem = document.createElement('li');
         // …
         list.append(listItem);
@@ -94,3 +96,50 @@ fetch('/hub/data/asset?chunk=10&part=1', {
     container.replaceChildren(list);
 }).catch(console.error);
 ~~~
+
+### References
+
+#### Blob
+
+##### Request
+
+###### Target
+
+~~~ .txt
+POST /hub/blob/asset/path/to/file.txt
+~~~
+
+###### Headers
+
+~~~ .http
+authorization: bearer …
+content-type: application/json
+~~~
+
+###### Body
+
+~~~ .json
+{
+    "raw": true
+}
+~~~
+
+Option | Description
+------ | -----------
+`raw` | Optional. If set, the blob data will be returned as plain text.
+
+##### Response
+
+###### 200
+
+###### 404
+
+#### Data
+
+#### Pull
+
+#### Push
+
+#### User
+
+#### Zip
