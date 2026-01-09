@@ -34,11 +34,12 @@ Create a user verification form and make it the home page of your application:
       Verify
     </button>
   </p>
+  <input name="peer" type="hidden" value="panel">
 </form>
 ~~~
 
 Add an event listener to the form to verify the user account. This will allow your application to obtain an access token
-that can be used across the entire application:
+that can be used across the entire application for 10 minutes:
 
 ~~~ .js
 const form = document.forms[0];
@@ -47,7 +48,8 @@ let accessToken;
 
 form.addEventListener('submit', function (e) {
     let key = this.elements.key.value,
-        pass = this.elements.pass.value;
+        pass = this.elements.pass.value,
+        peer = this.elements.peer.value;
     // Force `@` prefix
     if ('@' !== key[0]) {
         key = '@' + key;
@@ -56,7 +58,7 @@ form.addEventListener('submit', function (e) {
     fetch('/hub/user', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ key, pass })
+        body: JSON.stringify({ key, pass, peer })
     }).then(r => r.json()).then(r => {
         // Store the access token
         accessToken = r.token;
@@ -76,7 +78,7 @@ folders on that page. To do that, you will need to access the route that lists t
 `.\lot\asset` folder:
 
 ~~~ .js
-fetch('/hub/data?chunk=10&of=asset&part=1', {
+fetch('/hub/data/asset?chunk=10&part=1', {
     method: 'GET',
     headers: {
         'authorization': 'bearer ' + accessToken,

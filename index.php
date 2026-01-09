@@ -25,6 +25,9 @@ namespace x\hub {
                         return ['e' => $e->getMessage(), 'status' => 400];
                     }
                 })($file, $path, $query, $hash);
+                if (null === $r) {
+                    return $content; // Should display 404 page
+                }
                 if (\is_int($status = $r['status'] ?? 0) && $status >= 100 && $status <= 599) {
                     \status($status, \array_replace([
                         'access-control-allow-headers' => 'authorization, content-type',
