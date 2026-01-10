@@ -46,10 +46,14 @@ if (!$path = path(LOT . D . $path)) {
 $f = ($d = is_dir($path)) ? new Folder($path) : new File($path);
 
 $lot = [
+    '_seal' => $f->_seal,
+    '_size' => $f->_size,
+    '_time' => $f->_time,
     'name' => $f->name,
     'route' => $route = $f->route,
-    'seal' => $f->_seal,
-    'size' => $f->_size,
+    'seal' => $f->seal,
+    'size' => $f->size,
+    'time' => (string) $f->time,
     'url' => $f->url
 ];
 
@@ -67,11 +71,15 @@ if ($d) {
     foreach ((new Anemone($values))->sort($sort)->chunk($chunk, $part - 1) as $v) {
         $ff = ($dd = is_dir($v)) ? new Folder($v) : new File($v);
         $rr = [];
+        $rr['_seal'] = $ff->_seal;
+        $rr['_size'] = $ff->_size;
+        $rr['_time'] = $ff->_time;
         $rr['is']['file'] = !($rr['is']['folder'] = $dd);
         $rr['name'] = $ff->name;
         $rr['route'] = $ff->route;
-        $rr['seal'] = $ff->_seal;
-        $rr['size'] = $ff->_size;
+        $rr['seal'] = $ff->seal;
+        $rr['size'] = $ff->size;
+        $rr['time'] = (string) $ff->time;
         $rr['url'] = $ff->url;
         if (!$dd) {
             $rr['type'] = $ff->type;
