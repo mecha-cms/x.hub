@@ -103,24 +103,13 @@ fetch('/hub/data/asset?chunk=10&part=1', {
 
 ##### Request
 
-###### Target
-
-~~~ .txt
-POST /hub/blob/asset/path/to/file.txt
-~~~
-
-###### Headers
-
 ~~~ .http
-authorization: bearer …
+POST /hub/blob/{path_to_file}
+authorization: bearer <token>
 content-type: application/json
-~~~
 
-###### Body
-
-~~~ .json
 {
-    "raw": true
+  "raw": true
 }
 ~~~
 
@@ -132,14 +121,83 @@ Option | Description
 
 ###### 200
 
+_Returns the binary data with its proper MIME type._
+
+###### 400
+
 ###### 404
 
+~~~ .json
+{
+  "status": 404
+}
+~~~
+
 #### Data
+
+##### Request
+
+###### Route
+
+~~~ .http
+GET /hub/data/{path_to_file}
+
+authorization: bearer <token>
+content-type: application/json
+~~~
+
+~~~ .http
+GET /hub/data/{path_to_folder}
+
+authorization: bearer <token>
+content-type: application/json
+~~~
+
+Options for folder request:
+
+Option | Description
+------ | -----------
+`chunk` | -
+`deep` | -
+`part` | -
+`query` | -
+`sort` | -
+`x` | -
+
+##### Response
+
+###### 200
+
+###### 400
+
+###### 404
 
 #### Pull
 
 #### Push
 
 #### User
+
+##### Request
+
+~~~ .http
+POST /hub/user
+authorization: bearer <token>
+content-type: application/json
+
+{
+  "key": <user_key>,
+  "pass": <user_pass>,
+  "peer": <application_id>
+}
+~~~
+
+##### Response
+
+###### 200
+
+###### 400
+
+###### 401
 
 #### Zip
