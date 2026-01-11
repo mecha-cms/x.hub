@@ -15,8 +15,9 @@ namespace x\hub {
     }
     function route__hub($content, $path, $query, $hash) {
         \type('application/json');
+        $folder = __DIR__ . \D . 'engine' . \D . 'r';
         foreach (\step($path, '/') as $k => $v) {
-            if (\is_file($file = __DIR__ . \D . 'route' . \strtr($v, '/', \D) . '.php')) {
+            if (\is_file($file = $folder . \D . 'route' . \strtr($v, '/', \D) . '.php')) {
                 $r = (function ($f, $path, $query, $hash) {
                     \extract(\lot(), \EXTR_SKIP);
                     try {
@@ -27,7 +28,7 @@ namespace x\hub {
                 })($file, $path, $query, $hash);
                 if (\is_string($type = $_GET['type'] ?? 0)) {
                     foreach (\step($type, '/') as $k => $v) {
-                        if (\is_file($file = __DIR__ . \D . 'type' . \D . \strtr($v, '/', \D) . '.php')) {
+                        if (\is_file($file = $folder . \D . 'type' . \D . \strtr($v, '/', \D) . '.php')) {
                             (function ($f, $path, $query, $hash) use (&$r) {
                                 \extract(\lot(), \EXTR_SKIP);
                                 try {
