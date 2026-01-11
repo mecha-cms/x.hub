@@ -31,12 +31,17 @@ if (!(is_string($path) && "" !== $path)) {
     return ['status' => 400];
 }
 
-if (!(-1 === $sort[0] || 1 === $sort[1])) {
+if (!(-1 === $sort[0] || 1 === $sort[0])) {
     return ['status' => 400];
 }
 
 if (!(is_float($sort[1]) || is_int($sort[1]) || is_string($sort[1]))) {
-    return ['status' => 400,'x'=>$sort];
+    return ['status' => 400];
+}
+
+// Avoid sort key(s) such as `__construct`, `__sleep`, etc.
+if (is_string($sort[1]) && 0 === strpos($sort[1], '__')) {
+    return ['status' => 400];
 }
 
 if (!($path = path(LOT . D . $path))) {
@@ -68,7 +73,16 @@ if ($d) {
     $values = g($f->path, $x, $deep, false);
     $lot['lot'] = [];
     $lot['total'] = $total = count($values);
-    foreach ((new Anemone($values))->sort($sort)->chunk($chunk, $part - 1) as $v) {
+    foreach ((new Anemone($values))->sort(function ($a, $b) use (&$sort) {
+        $sort['a'] = $a;
+        $sort['b'] = $b;
+        $a = is_dir($a) ? new Folder($a) : new File($a);
+        $b = is_dir($b) ? new Folder($b) : new File($b);
+        if (!isset($a->{$sort[1]}) || !isset($b->{$sort[1]})) {
+            return 0;
+        }
+        return 1 === $sort[0] ? $a->{$sort[1]} <=> $b->{$sort[1]} : $b->{$sort[1]} <=> $a->{$sort[1]};
+    })->chunk($chunk, $part - 1) as $v) {
         $ff = ($dd = is_dir($v)) ? new Folder($v) : new File($v);
         $rr = [];
         $rr['_seal'] = $ff->_seal;
@@ -76,7 +90,7 @@ if ($d) {
         $rr['_time'] = $ff->_time;
         $rr['is']['file'] = !($rr['is']['folder'] = $dd);
         $rr['name'] = $ff->name;
-        $rr['route'] = $ff->route;
+        $rr['route'] = substr($ff->route, strlen($route));
         $rr['seal'] = $ff->seal;
         $rr['size'] = $ff->size;
         $rr['time'] = (string) $ff->time;

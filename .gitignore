@@ -1,0 +1,12 @@
+composer.lock
+engine/r/composer.lock
+engine/r/vendor/maennchen/zipstream-php/.editorconfig
+engine/r/vendor/maennchen/zipstream-php/.phive
+engine/r/vendor/maennchen/zipstream-php/.php-cs-fixer.dist.php
+engine/r/vendor/maennchen/zipstream-php/.phpdoc
+engine/r/vendor/maennchen/zipstream-php/.tool-versions
+engine/r/vendor/maennchen/zipstream-php/guides
+engine/r/vendor/maennchen/zipstream-php/phpdoc.dist.xml
+engine/r/vendor/maennchen/zipstream-php/phpunit.xml.dist
+engine/r/vendor/maennchen/zipstream-php/psalm.xml
+engine/r/vendor/maennchen/zipstream-php/test

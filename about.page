@@ -101,54 +101,39 @@ fetch('/hub/data/asset?chunk=10&part=1', {
 
 #### Blob
 
-##### Request
+Gets a file as a binary:
 
 ~~~ .http
-POST /hub/blob/{path_to_file}
+GET /hub/blob/{path_to_file}
 authorization: bearer <token>
-content-type: application/json
-
-{
-  "raw": true
-}
 ~~~
 
-Option | Description
------- | -----------
-`raw` | Optional. If set, the blob data will be returned as plain text.
+Gets a file as a ZIP file:
 
-##### Response
+~~~ .http
+GET /hub/blob/{path_to_file}
+accept: application/zip
+authorization: bearer <token>
+~~~
 
-###### 200
+Gets a folder as a ZIP file:
 
-_Returns the binary data with its proper MIME type._
-
-###### 400
-
-###### 404
-
-~~~ .json
-{
-  "status": 404
-}
+~~~ .http
+GET /hub/blob/{path_to_folder}
+accept: application/zip
+authorization: bearer <token>
 ~~~
 
 #### Data
 
-##### Request
-
-###### Route
-
 ~~~ .http
 GET /hub/data/{path_to_file}
-
 authorization: bearer <token>
 content-type: application/json
 ~~~
 
 ~~~ .http
 GET /hub/data/{path_to_folder}
-
 authorization: bearer <token>
 content-type: application/json
 ~~~
@@ -164,21 +149,7 @@ Option | Description
 `sort` | -
 `x` | -
 
-##### Response
-
-###### 200
-
-###### 400
-
-###### 404
-
-#### Pull
-
-#### Push
-
 #### User
-
-##### Request
 
 ~~~ .http
 POST /hub/user
@@ -191,13 +162,3 @@ content-type: application/json
   "peer": <application_id>
 }
 ~~~
-
-##### Response
-
-###### 200
-
-###### 400
-
-###### 401
-
-#### Zip
