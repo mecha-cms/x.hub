@@ -27,19 +27,19 @@ if (!(is_int($part) && $part > 0)) {
     return ['status' => 400];
 }
 
-if (!is_string($path) || "" === $path) {
+if (!(is_string($path) && "" !== $path)) {
     return ['status' => 400];
 }
 
-if (-1 !== $sort[0] && 1 !== $sort[0]) {
+if (!(-1 === $sort[0] || 1 === $sort[1])) {
     return ['status' => 400];
 }
 
-if (!is_float($sort[1]) && !is_int($sort[1]) && !is_string($sort[1])) {
+if (!(is_float($sort[1]) || is_int($sort[1]) || is_string($sort[1]))) {
     return ['status' => 400,'x'=>$sort];
 }
 
-if (!$path = path(LOT . D . $path)) {
+if (!($path = path(LOT . D . $path))) {
     return ['status' => 404];
 }
 

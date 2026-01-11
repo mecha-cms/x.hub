@@ -11,7 +11,7 @@ if ('POST' !== $_SERVER['REQUEST_METHOD']) {
 $path = substr($path, 6); // `strlen('/blob/')`
 $raw = !empty($_POST['raw']);
 
-if (!is_string($path) || "" === $path) {
+if (!(is_string($path) && "" !== $path)) {
     return ['status' => 400];
 }
 

@@ -32,7 +32,7 @@ if (0 === strpos($key, '@')) {
     }
     content($try_file, (string) ($try_now + 1), 0600);
     if (!is_file($file = $folder . '.page')) {
-        return ['status' => 401]; // User does not exist
+        return ['status' => 401]; // User’s file does not exist
     }
     if (!is_file($f = $folder . D . 'pass.data')) {
         return ['status' => 401]; // User’s pass does not exist
