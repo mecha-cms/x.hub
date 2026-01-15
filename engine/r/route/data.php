@@ -50,7 +50,7 @@ if (!($path = path(LOT . D . $path))) {
 
 $f = ($d = is_dir($path)) ? new Folder($path) : new File($path);
 
-$lot = [
+$data = [
     '_seal' => $f->_seal,
     '_size' => $f->_size,
     '_time' => $f->_time,
@@ -63,16 +63,16 @@ $lot = [
 ];
 
 if (!$d) {
-    $lot['type'] = $f->type;
-    $lot['x'] = $f->x;
+    $data['type'] = $f->type;
+    $data['x'] = $f->x;
 }
 
 $r = [];
 
 if ($d) {
     $values = g($f->path, $x, $deep, false);
-    $lot['lot'] = [];
-    $lot['total'] = $total = count($values);
+    $data['lot'] = [];
+    $data['total'] = $total = count($values);
     foreach ((new Anemone($values))->sort(function ($a, $b) use (&$sort) {
         $sort['a'] = $a;
         $sort['b'] = $b;
@@ -101,7 +101,7 @@ if ($d) {
         }
         ksort($rr);
         ksort($rr['is']);
-        $lot['lot'][] = $rr;
+        $data['lot'][] = $rr;
     }
     $r['has']['next'] = $part < ceil($total / $chunk);
     $r['has']['prev'] = $part > 1;
@@ -110,12 +110,22 @@ if ($d) {
     $r['query']['part'] = $part;
     $r['query']['sort'] = $sort;
     $r['query']['x'] = $x;
+} else {
+    if (array_intersect_key($_GET, [
+        'chunk' => 1,
+        'deep' => 1,
+        'part' => 1,
+        'sort' => 1,
+        'x' => 1
+    ])) {
+        return ['status' => 400];
+    }
 }
 
-!empty($lot) && ksort($lot);
+!empty($data) && ksort($data);
 
+$r['data'] = $data;
 $r['is']['file'] = !($r['is']['folder'] = $d);
-$r['lot'] = $lot;
 $r['status'] = 200;
 $r['user'] = x\hub\user($status);
 

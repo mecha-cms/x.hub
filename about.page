@@ -88,7 +88,7 @@ fetch('/hub/data/asset?chunk=10&part=1', {
     }
 }).then(r => r.json()).then(r => {
     const list = document.createElement('ul');
-    r.lot.total > 0 && r.lot.lot.forEach(v => {
+    r.data.total > 0 && r.data.lot.forEach(v => {
         const listItem = document.createElement('li');
         // …
         list.append(listItem);
