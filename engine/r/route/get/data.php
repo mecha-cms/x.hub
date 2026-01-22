@@ -11,7 +11,7 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
 $chunk = $_GET['chunk'] ?? 5;
 $deep = $_GET['deep'] ?? 0;
 $part = $_GET['part'] ?? 1;
-$path = substr($path, 6); // `strlen('/data/')`
+$path = substr($path, 10); // `strlen('/get/data/')`
 $sort = array_replace([1, 'route'], (array) ($_GET['sort'] ?? 1));
 $x = $_GET['x'] ?? null;
 
@@ -54,6 +54,7 @@ $data = [
     '_seal' => $f->_seal,
     '_size' => $f->_size,
     '_time' => $f->_time,
+    'id' => $f->id,
     'name' => $f->name,
     'route' => $route = $f->route,
     'seal' => $f->seal,
@@ -88,6 +89,7 @@ if ($d) {
         $rr['_seal'] = $ff->_seal;
         $rr['_size'] = $ff->_size;
         $rr['_time'] = $ff->_time;
+        $rr['id'] = $ff->id;
         $rr['is']['file'] = !($rr['is']['folder'] = $dd);
         $rr['name'] = $ff->name;
         $rr['route'] = substr($ff->route, strlen($route));

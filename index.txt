@@ -57,7 +57,7 @@ form.addEventListener('submit', function (e) {
         key = '@' + key;
     }
     // Verify user account…
-    fetch('/hub/user', {
+    fetch('/hub/try/user', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ key, pass, peer })
@@ -80,7 +80,7 @@ folders on that page. To do that, you will need to access the route that lists t
 `.\lot\asset` folder:
 
 ~~~ .js
-fetch('/hub/data/asset?chunk=10&part=1', {
+fetch('/hub/get/data/asset?chunk=10&part=1', {
     method: 'GET',
     headers: {
         'authorization': 'bearer ' + accessToken,
@@ -111,7 +111,7 @@ authorization: bearer <token>
 Gets a file as a ZIP file:
 
 ~~~ .http
-GET /hub/blob/{path_to_file}
+GET /hub/get/blob/{path_to_file}
 accept: application/zip
 authorization: bearer <token>
 ~~~
@@ -119,7 +119,7 @@ authorization: bearer <token>
 Gets a folder as a ZIP file:
 
 ~~~ .http
-GET /hub/blob/{path_to_folder}
+GET /hub/get/blob/{path_to_folder}
 accept: application/zip
 authorization: bearer <token>
 ~~~
@@ -127,13 +127,13 @@ authorization: bearer <token>
 #### Data
 
 ~~~ .http
-GET /hub/data/{path_to_file}
+GET /hub/get/data/{path_to_file}
 authorization: bearer <token>
 content-type: application/json
 ~~~
 
 ~~~ .http
-GET /hub/data/{path_to_folder}
+GET /hub/get/data/{path_to_folder}
 authorization: bearer <token>
 content-type: application/json
 ~~~
@@ -152,7 +152,7 @@ Option | Description
 #### User
 
 ~~~ .http
-POST /hub/user
+POST /hub/try/user
 authorization: bearer <token>
 content-type: application/json
 

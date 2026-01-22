@@ -4,7 +4,7 @@ if (is_int($status = x\hub\status())) {
     return ['status' => $status];
 }
 
-$path = substr($path, 6); // `strlen('/blob/')`
+$path = substr($path, 10); // `strlen('/get/blob/')`
 
 if (!(is_string($path) && "" !== $path)) {
     return ['status' => 400];
