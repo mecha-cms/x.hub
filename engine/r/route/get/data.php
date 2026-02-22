@@ -55,12 +55,12 @@ $data = [
     '_size' => $f->_size,
     '_time' => $f->_time,
     'id' => $f->id,
+    'link' => $f->link,
     'name' => $f->name,
     'route' => $route = $f->route,
     'seal' => $f->seal,
     'size' => $f->size,
-    'time' => (string) $f->time,
-    'url' => $f->url
+    'time' => (string) $f->time
 ];
 
 if (!$d) {
@@ -91,12 +91,12 @@ if ($d) {
         $rr['_time'] = $ff->_time;
         $rr['id'] = $ff->id;
         $rr['is']['file'] = !($rr['is']['folder'] = $dd);
+        $rr['link'] = $ff->link;
         $rr['name'] = $ff->name;
         $rr['route'] = substr($ff->route, strlen($route));
         $rr['seal'] = $ff->seal;
         $rr['size'] = $ff->size;
         $rr['time'] = (string) $ff->time;
-        $rr['url'] = $ff->url;
         if (!$dd) {
             $rr['type'] = $ff->type;
             $rr['x'] = $ff->x;
