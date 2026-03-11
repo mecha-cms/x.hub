@@ -55,7 +55,7 @@ $data = [
     '_size' => $f->_size,
     '_time' => $f->_time,
     'id' => $f->id,
-    'link' => $f->link,
+    'link' => (string) $f->link,
     'name' => $f->name,
     'route' => $route = $f->route,
     'seal' => $f->seal,
@@ -74,9 +74,9 @@ if ($d) {
     $values = g($f->path, $x, $deep, false);
     $data['lot'] = [];
     $data['total'] = $total = count($values);
-    foreach ((new Anemone($values))->sort(function ($a, $b) use (&$sort) {
-        $sort['a'] = $a;
-        $sort['b'] = $b;
+    foreach ((new Batch($values))->sort(function ($a, $b) use (&$sort) {
+        // $sort['a'] = $a;
+        // $sort['b'] = $b;
         $a = is_dir($a) ? new Folder($a) : new File($a);
         $b = is_dir($b) ? new Folder($b) : new File($b);
         if (!isset($a->{$sort[1]}) || !isset($b->{$sort[1]})) {
@@ -91,7 +91,7 @@ if ($d) {
         $rr['_time'] = $ff->_time;
         $rr['id'] = $ff->id;
         $rr['is']['file'] = !($rr['is']['folder'] = $dd);
-        $rr['link'] = $ff->link;
+        $rr['link'] = (string) $ff->link;
         $rr['name'] = $ff->name;
         $rr['route'] = substr($ff->route, strlen($route));
         $rr['seal'] = $ff->seal;
