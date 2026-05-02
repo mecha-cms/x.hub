@@ -1,11 +1,17 @@
 <?php
 
 if (is_int($status = x\hub\status())) {
-    return ['status' => $status];
+    return [
+        'description' => null, // TODO
+        'status' => $status
+    ];
 }
 
 if ('GET' !== $_SERVER['REQUEST_METHOD']) {
-    return ['status' => 405];
+    return [
+        'description' => i('Method not allowed.'),
+        'status' => 405
+    ];
 }
 
 $chunk = $_GET['chunk'] ?? 5;
@@ -16,36 +22,60 @@ $sort = array_replace([1, 'route'], (array) ($_GET['sort'] ?? 1));
 $x = $_GET['x'] ?? null;
 
 if (!(is_int($chunk) && $chunk > 0)) {
-    return ['status' => 400];
+    return [
+        'description' => i('Bad request.'),
+        'status' => 400
+    ];
 }
 
 if (!(false === $deep || true === $deep || is_int($deep) && $deep >= 0)) {
-    return ['status' => 400];
+    return [
+        'description' => i('Bad request.'),
+        'status' => 400
+    ];
 }
 
 if (!(is_int($part) && $part > 0)) {
-    return ['status' => 400];
+    return [
+        'description' => i('Bad request.'),
+        'status' => 400
+    ];
 }
 
 if (!(is_string($path) && "" !== $path)) {
-    return ['status' => 400];
+    return [
+        'description' => i('Bad request.'),
+        'status' => 400
+    ];
 }
 
 if (!(-1 === $sort[0] || 1 === $sort[0])) {
-    return ['status' => 400];
+    return [
+        'description' => i('Bad request.'),
+        'status' => 400
+    ];
 }
 
 if (!(is_float($sort[1]) || is_int($sort[1]) || is_string($sort[1]))) {
-    return ['status' => 400];
+    return [
+        'description' => i('Bad request.'),
+        'status' => 400
+    ];
 }
 
 // Avoid sort key(s) such as `__construct`, `__sleep`, etc.
 if (is_string($sort[1]) && 0 === strpos($sort[1], '__')) {
-    return ['status' => 400];
+    return [
+        'description' => i('Bad request.'),
+        'status' => 400
+    ];
 }
 
 if (!($path = path(LOT . D . $path))) {
-    return ['status' => 404];
+    return [
+        'description' => i('File does not exist.'),
+        'status' => 404
+    ];
 }
 
 $f = ($d = is_dir($path)) ? new Folder($path) : new File($path);
@@ -75,8 +105,6 @@ if ($d) {
     $data['lot'] = [];
     $data['total'] = $total = count($values);
     foreach ((new Batch($values))->sort(function ($a, $b) use (&$sort) {
-        // $sort['a'] = $a;
-        // $sort['b'] = $b;
         $a = is_dir($a) ? new Folder($a) : new File($a);
         $b = is_dir($b) ? new Folder($b) : new File($b);
         if (!isset($a->{$sort[1]}) || !isset($b->{$sort[1]})) {
@@ -120,13 +148,17 @@ if ($d) {
         'sort' => 1,
         'x' => 1
     ])) {
-        return ['status' => 400];
+        return [
+            'description' => i('Bad request.'),
+            'status' => 400
+        ];
     }
 }
 
 !empty($data) && ksort($data);
 
 $r['data'] = $data;
+$r['description'] = i('OK.');
 $r['is']['file'] = !($r['is']['folder'] = $d);
 $r['status'] = 200;
 $r['user'] = x\hub\user($status);

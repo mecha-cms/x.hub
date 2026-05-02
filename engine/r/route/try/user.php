@@ -1,7 +1,10 @@
 <?php
 
 if ('POST' !== $_SERVER['REQUEST_METHOD']) {
-    return ['status' => 405];
+    return [
+        'description' => i('Method not allowed.'),
+        'status' => 405
+    ];
 }
 
 $now = time();
@@ -12,7 +15,10 @@ $pass = $_POST['pass'] ?? "";
 $peer = $_POST['peer'] ?? ip() ?? "";
 
 if (!is_string($key) || !is_string($pass) || !is_string($peer) || "" === $key || "" === $pass || "" === $peer) {
-    return ['status' => 400];
+    return [
+        'description' => i('Bad request.'),
+        'status' => 400
+    ];
 }
 
 // In order to verify using the built-in user feature, client(s) are required to include the `@` prefix. However, the
@@ -20,7 +26,10 @@ if (!is_string($key) || !is_string($pass) || !is_string($peer) || "" === $key ||
 // optional. In the future, user key(s) submitted without the `@` prefix will be treated differently.
 if (0 === strpos($key, '@')) {
     if (!isset($state->x->user)) {
-        return ['status' => 424]; // Missing user extension
+        return [
+            'description' => i('Missing user extension.'),
+            'status' => 424
+        ];
     }
     $name = substr($key, 1);
     $try_now = (int) (content($try_file = ($folder = LOT . D . 'user' . D . $name) . D . '.try' . D . md5($peer)) ?? 0);
@@ -28,22 +37,39 @@ if (0 === strpos($key, '@')) {
         $try_now = 0; // Reset
     }
     if ($try_now >= 5) {
-        return ['status' => 429]; // Too many verification request(s)
+        return [
+            'description' => i('Too many verification requests.'),
+            'status' => 429
+        ];
     }
     content($try_file, (string) ($try_now + 1), 0600);
-    if (!is_file($file = $folder . '.page')) {
-        return ['status' => 401]; // User’s file does not exist
+    $file = exist($folder . '.{' . x\page\x() . '}', 1);
+    if (!$file || !is_file($file)) {
+        return [
+            'description' => i(defined('TEST') && TEST ? 'User does not exist.' : 'Invalid key or pass.'),
+            'status' => 401
+        ];
     }
-    if (!is_file($f = $folder . D . 'pass.data')) {
-        return ['status' => 401]; // User’s pass does not exist
+    $f = exist($folder . D . '+' . D . 'pass.{' . x\page\x() . '}', 1);
+    if (!$f || !is_file($f)) {
+        return [
+            'description' => i(defined('TEST') && TEST ? 'User\'s pass does not exist.' : 'Invalid key or pass.'),
+            'status' => 401
+        ];
     }
     if (0 === strpos($p = file_get_contents($f), P)) {
         if (!password_verify($pass . '@' . $name, substr($p, 1))) {
-            return ['status' => 401]; // Wrong user’s pass
+            return [
+                'description' => i(defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.'),
+                'status' => 401
+            ];
         }
     } else {
         if ($pass !== $p) {
-            return ['status' => 401]; // Wrong user’s pass
+            return [
+                'description' => i(defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.'),
+                'status' => 401
+            ];
         }
     }
     delete($try_file);
@@ -62,6 +88,7 @@ if (0 === strpos($key, '@')) {
     // refreshed using it.
     content($token_file, $token_value, 0600);
     return [
+        'description' => i('OK.'),
         'status' => 200,
         'token' => x\hub\x([
             'aud' => $peer,

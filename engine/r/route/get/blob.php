@@ -1,17 +1,26 @@
 <?php
 
 if (is_int($status = x\hub\status())) {
-    return ['status' => $status];
+    return [
+        'description' => null, // TODO
+        'status' => $status
+    ];
 }
 
 $path = substr($path, 10); // `strlen('/get/blob/')`
 
 if (!(is_string($path) && "" !== $path)) {
-    return ['status' => 400];
+    return [
+        'description' => i('Bad request.'),
+        'status' => 400
+    ];
 }
 
 if (!($path = path(LOT . D . $path))) {
-    return ['status' => 404];
+    return [
+        'description' => i('File does not exist.'),
+        'status' => 404
+    ];
 }
 
 $cache_try = static function ($tag_e, $time_m) {
@@ -43,16 +52,25 @@ if ('GET' === ($q = strtoupper($_SERVER['REQUEST_METHOD']))) {
         $name = basename($name);
     }
     if (!(is_string($name) && "" !== $name)) {
-        return ['status' => 400];
+        return [
+            'description' => i('Bad request.'),
+            'status' => 400
+        ];
     }
     if (is_file($path)) {
         if (false === ($type = mime_content_type($path))) {
-            return ['status' => 406];
+            return [
+                'description' => i('Not acceptable.'),
+                'status' => 406
+            ];
         }
         $tag_e = 'W/"' . dechex($time_m = filemtime($path)) . '-' . dechex(filesize($path)) . '"';
         if (false !== strpos(',image/gif,image/jpeg,image/png,image/webp,', ',' . $type . ',')) {
             if (!extension_loaded('gd')) {
-                return ['status' => 424]; // Missing GD extension
+                return [
+                    'description' => i('Missing PHP `gd` extension.'),
+                    'status' => 424
+                ];
             }
             $w = $_GET['width'] ?? $_GET['w'] ?? -1;
             $h = $_GET['height'] ?? $_GET['h'] ?? $w;
@@ -67,7 +85,10 @@ if ('GET' === ($q = strtoupper($_SERVER['REQUEST_METHOD']))) {
                         'etag' => false,
                         'last-modified' => false
                     ]);
-                    return ['status' => 415]; // Unsupported media type
+                    return [
+                        'description' => i('Unsupported media type.'),
+                        'status' => 415
+                    ];
                 }
                 [$w_max, $h_max] = $info;
                 if (!function_exists($task = 'imagecreatefrom' . substr($type, 6))) {
@@ -75,7 +96,10 @@ if ('GET' === ($q = strtoupper($_SERVER['REQUEST_METHOD']))) {
                         'etag' => false,
                         'last-modified' => false
                     ]);
-                    return ['status' => 415]; // Unsupported media type
+                    return [
+                        'description' => i('Unsupported media type.'),
+                        'status' => 415
+                    ];
                 }
                 $blob = call_user_func($task, $path);
                 $scale = max($w / $w_max, $h / $h_max);
@@ -102,7 +126,10 @@ if ('GET' === ($q = strtoupper($_SERVER['REQUEST_METHOD']))) {
                         'etag' => false,
                         'last-modified' => false
                     ]);
-                    return ['status' => 415]; // Unsupported media type
+                    return [
+                        'description' => i('Unsupported media type.'),
+                        'status' => 415
+                    ];
                 }
                 status(200, [
                     'content-disposition' => 'inline; filename="' . $name . '"',
@@ -183,36 +210,58 @@ if ('POST' === $q) {
         if ('multipart/form-data' === ($type = type())) {
             $blob = $_FILES['blob'] ?? [];
             if (!is_array($blob = $_FILES['blob'] ?? 0)) {
-                return ['status' => 500];
+                return [
+                    'description' => i('Internal server error.'),
+                    'status' => 500
+                ];
             }
             // Validate blob
             if (UPLOAD_ERR_OK !== ($blob['error'] ?? UPLOAD_ERR_NO_FILE)) {
-                return ['status' => 400];
+                return [
+                    'description' => i('Bad request.'),
+                    'status' => 400
+                ];
             }
             // TODO: Check disk space
             if (is_string($name = $blob['name'] ?? 0)) {
                 $name = basename($name);
             }
             if (!(is_string($name) && "" !== $name)) {
-                return ['status' => 400];
+                return [
+                    'description' => i('Bad request.'),
+                    'status' => 400
+                ];
             }
             if (is_file($f = $path . D . $name)) {
-                return ['status' => 409]; // Conflict (file already exists)
+                return [
+                    'description' => i('File already exists.'),
+                    'status' => 409
+                ];
             }
             if (false === ($ff = tempnam($path, '.post-'))) {
-                return ['status' => 507];
+                return [
+                    'description' => i('Insufficient storage.'),
+                    'status' => 507
+                ];
             }
             if (!move_uploaded_file($blob['tmp_name'], $ff)) {
                 unlink($ff);
-                return ['status' => 500];
+                return [
+                    'description' => i('Internal server error.'),
+                    'status' => 500
+                ];
             }
             if (!rename($ff, $f)) {
                 unlink($ff);
-                return ['status' => 500];
+                return [
+                    'description' => i('Internal server error.'),
+                    'status' => 500
+                ];
             }
             $_SERVER['REQUEST_METHOD'] = 'GET';
             $path = '/data/' . strtr(substr($f, strlen(LOT . D)), D, '/');
             $r = require __DIR__ . D  . 'data.php';
+            $r['description'] = i('File successfully created.');
             $r['status'] = 201;
             return $r;
         }
@@ -222,28 +271,47 @@ if ('POST' === $q) {
                 $name = basename($name);
             }
             if (!(is_string($name) && "" !== $name)) {
-                return ['status' => 400];
+                return [
+                    'description' => i('Bad request.'),
+                    'status' => 400
+                ];
             }
             if (is_file($f = $path . D . $name)) {
-                return ['status' => 409]; // Conflict (file already exists)
+                return [
+                    'description' => i('File already exists.'),
+                    'status' => 409
+                ];
             }
             // TODO: Check disk space
             if (is_int(file_put_contents($f, s($_POST['content'] ?? "")))) {
                 $_SERVER['REQUEST_METHOD'] = 'GET';
                 $path = '/data/' . strtr(substr($f, strlen(LOT . D)), D, '/');
                 $r = require __DIR__ . D  . 'data.php';
+                $r['description'] = i('File successfully created.');
                 $r['status'] = 201;
                 return $r;
             }
-            return ['status' => 500];
+            return [
+                'description' => i('Internal server error.'),
+                'status' => 500
+            ];
         }
-        return ['status' => 415]; // Unsupported media type
+        return [
+            'description' => i('Unsupported media type.'),
+            'status' => 415
+        ];
     }
-    return ['status' => 405];
+    return [
+        'description' => i('Method not allowed.'),
+        'status' => 405
+    ];
 }
 
 if ('PUT' === $q && is_file($path)) {
     // TODO
 }
 
-return ['status' => 405]; // Method not allowed
+return [
+    'description' => i('Method not allowed.'),
+    'status' => 405
+];
