@@ -88,8 +88,8 @@ namespace x\hub {
         if (\is_int($r)) {
             return ['status' => -1];
         }
-        if (0 === \strpos($key = $r['sub'], '@')) {
-            $user = new \User(($folder = \LOT . \D . 'user' . \D . \substr($key, 1)) . '.page');
+        if (0 === \strpos($key = $r['sub'], '@') && ($file = \exist(\LOT . \D . 'user' . \D . \substr($key, 1) . '.{' . \x\page\x() . '}', 1))) {
+            $user = new \User($file);
             return [
                 'author' => $user->author,
                 'name' => $user->name,
