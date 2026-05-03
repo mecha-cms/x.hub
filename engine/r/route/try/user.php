@@ -31,7 +31,7 @@ if (0 === strpos($key, '@')) {
         return $r;
     }
     $name = substr($key, 1);
-    $try_now = (int) (content($try_file = ($folder = LOT . D . 'user' . D . $name) . D . '.try' . D . md5($peer)) ?? 0);
+    $try_now = (int) (content($try_file = ($folder = LOT . D . 'user' . D . $name) . D . '+' . D . '.try' . D . md5($peer)) ?? 0);
     if (is_file($try_file) && ($now - filemtime($try_file) >= $validity)) {
         $try_now = 0; // Reset
     }
@@ -73,7 +73,7 @@ if (0 === strpos($key, '@')) {
         'author' => $user->author,
         'name' => $user->name,
         'status' => $user->status,
-        'token' => ($token_value = content($token_file = $folder . D . '.hub' . D . ($id = bin2hex(random_bytes(8)))) ?? bin2hex(random_bytes(16))),
+        'token' => ($token_value = content($token_file = $folder . D . '+' . D . '.hub' . D . ($id = bin2hex(random_bytes(8)))) ?? bin2hex(random_bytes(16))),
         'x' => $user->x
     ];
     // A refresh token file must be stored on the server to support the “refresh token” feature. Its name is based on
