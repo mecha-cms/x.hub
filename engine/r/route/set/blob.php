@@ -19,7 +19,7 @@ if ('POST' !== $_SERVER['REQUEST_METHOD']) {
     return $r;
 }
 
-$path = substr($path, 10); // `strlen('/set/blob/')`
+$path = substr(rawurldecode($path), 10); // `strlen('/set/blob/')`
 
 if (!(is_string($path) && "" !== $path)) {
     $r['description'] = i('Bad request.');

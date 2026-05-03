@@ -19,9 +19,7 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
     return $r;
 }
 
-$path = substr($path, 10); // `strlen('/get/data/')`
-
-$r['has']['parent'] = substr_count($path, '/') > 0;
+$path = substr(rawurldecode($path), 10); // `strlen('/get/data/')`
 
 $chunk = $_GET['chunk'] ?? 5;
 $deep = $_GET['deep'] ?? 0;
@@ -85,11 +83,13 @@ if (is_string($sort[1]) && 0 === strpos($sort[1], '__')) {
     return $r;
 }
 
-if (!($path = path(LOT . D . $path))) {
+if (!($path = path(LOT . D . ($f = $path)))) {
     $r['description'] = i('File or folder does not exist.');
     $r['status'] = 404;
     return $r;
 }
+
+$r['has']['parent'] = substr_count($f, '/') > 0;
 
 $f = ($d = is_dir($path)) ? new Folder($path) : new File($path);
 
