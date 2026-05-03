@@ -86,7 +86,7 @@ if (is_string($sort[1]) && 0 === strpos($sort[1], '__')) {
 }
 
 if (!($path = path(LOT . D . $path))) {
-    $r['description'] = i('File does not exist.');
+    $r['description'] = i('File or folder does not exist.');
     $r['status'] = 404;
     return $r;
 }
@@ -108,18 +108,25 @@ $data = [
 
 $parent = $f->parent;
 
-$data['parent'] = [
-    '_seal' => $parent->_seal,
-    // '_size' => $parent->_size,
-    '_time' => $parent->_time,
-    'id' => $parent->id,
-    'link' => (string) $parent->link,
-    'name' => $parent->name,
-    'route' => $parent->route,
-    'seal' => $parent->seal,
-    // 'size' => $parent->size,
-    'time' => (string) $parent->time
-];
+if ($r['has']['parent']) {
+    $data['parent'] = [
+        '_seal' => $parent->_seal,
+        // '_size' => $parent->_size,
+        '_time' => $parent->_time,
+        'id' => $parent->id,
+        'is' => [
+            'blob' => false,
+            'file' => false,
+            'folder' => true
+        ],
+        'link' => (string) $parent->link,
+        'name' => $parent->name,
+        'route' => $parent->route,
+        'seal' => $parent->seal,
+        // 'size' => $parent->size,
+        'time' => (string) $parent->time
+    ];
+}
 
 if ($d) {
     $values = g($f->path, $x, $deep, false);
