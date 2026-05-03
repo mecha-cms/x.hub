@@ -40,13 +40,13 @@ if (0 === strpos($key, '@')) {
         $r['status'] = 429;
         return $r;
     }
-    content($try_file, (string) ($try_now + 1), 0600);
     $file = exist($folder . '.{' . x\page\x() . '}', 1);
     if (!$file || !is_file($file)) {
         $r['description'] = i(defined('TEST') && TEST ? 'User does not exist.' : 'Invalid key or pass.');
         $r['status'] = 401;
         return $r;
     }
+    content($try_file, (string) ($try_now + 1), 0600);
     $f = exist($folder . D . '+' . D . 'pass.{' . x\page\x() . '}', 1);
     if (!$f || !is_file($f)) {
         $r['description'] = i(defined('TEST') && TEST ? 'User\'s pass does not exist.' : 'Invalid key or pass.');
