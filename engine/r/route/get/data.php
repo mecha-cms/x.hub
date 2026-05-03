@@ -156,7 +156,7 @@ if ($d) {
         $rr['_size'] = $ff->_size;
         $rr['_time'] = $ff->_time;
         $rr['id'] = $ff->id;
-        $rr['is']['blob'] = !$dd && 0 !== strpos($ff->type ?? "", 'text/') && false !== strpos(fread(fopen($v, 'rb'), 1024), "\0");
+        $rr['is']['blob'] = !$dd && 0 !== strpos($ff->type ?? "", 'text/') && false !== strpos(fread(fopen($ff->path, 'rb'), 1024), "\0");
         $rr['is']['file'] = !($rr['is']['folder'] = $dd);
         $rr['link'] = (string) $ff->link;
         $rr['name'] = $ff->name;
@@ -206,6 +206,7 @@ if ($d) {
 
 $r['data'] = $data;
 $r['description'] = i('Okay.');
+$r['is']['blob'] = !$d && 0 !== strpos($f->type ?? "", 'text/') && false !== strpos(fread(fopen($f->path, 'rb'), 1024), "\0");
 $r['is']['file'] = !($r['is']['folder'] = $d);
 $r['status'] = 200;
 
