@@ -1,10 +1,11 @@
 <?php
 
+$r = [];
+
 if ('POST' !== $_SERVER['REQUEST_METHOD']) {
-    return [
-        'description' => i('Method not allowed.'),
-        'status' => 405
-    ];
+    $r['description'] = i('Method not allowed.');
+    $r['status'] = 405;
+    return $r;
 }
 
 $now = time();
@@ -15,10 +16,9 @@ $pass = $_POST['pass'] ?? "";
 $peer = $_POST['peer'] ?? ip() ?? "";
 
 if (!is_string($key) || !is_string($pass) || !is_string($peer) || "" === $key || "" === $pass || "" === $peer) {
-    return [
-        'description' => i('Bad request.'),
-        'status' => 400
-    ];
+    $r['description'] = i('Bad request.');
+    $r['status'] = 400;
+    return $r;
 }
 
 // In order to verify using the built-in user feature, client(s) are required to include the `@` prefix. However, the
@@ -26,10 +26,9 @@ if (!is_string($key) || !is_string($pass) || !is_string($peer) || "" === $key ||
 // optional. In the future, user key(s) submitted without the `@` prefix will be treated differently.
 if (0 === strpos($key, '@')) {
     if (!isset($state->x->user)) {
-        return [
-            'description' => i('Missing user extension.'),
-            'status' => 424
-        ];
+        $r['description'] = i('Missing `user` extension.');
+        $r['status'] = 424;
+        return $r;
     }
     $name = substr($key, 1);
     $try_now = (int) (content($try_file = ($folder = LOT . D . 'user' . D . $name) . D . '.try' . D . md5($peer)) ?? 0);
@@ -37,39 +36,34 @@ if (0 === strpos($key, '@')) {
         $try_now = 0; // Reset
     }
     if ($try_now >= 5) {
-        return [
-            'description' => i('Too many verification requests.'),
-            'status' => 429
-        ];
+        $r['description'] = i('Too many verification requests.');
+        $r['status'] = 429;
+        return $r;
     }
     content($try_file, (string) ($try_now + 1), 0600);
     $file = exist($folder . '.{' . x\page\x() . '}', 1);
     if (!$file || !is_file($file)) {
-        return [
-            'description' => i(defined('TEST') && TEST ? 'User does not exist.' : 'Invalid key or pass.'),
-            'status' => 401
-        ];
+        $r['description'] = i(defined('TEST') && TEST ? 'User does not exist.' : 'Invalid key or pass.');
+        $r['status'] = 401;
+        return $r;
     }
     $f = exist($folder . D . '+' . D . 'pass.{' . x\page\x() . '}', 1);
     if (!$f || !is_file($f)) {
-        return [
-            'description' => i(defined('TEST') && TEST ? 'User\'s pass does not exist.' : 'Invalid key or pass.'),
-            'status' => 401
-        ];
+        $r['description'] = i(defined('TEST') && TEST ? 'User\'s pass does not exist.' : 'Invalid key or pass.');
+        $r['status'] = 401;
+        return $r;
     }
     if (0 === strpos($p = file_get_contents($f), P)) {
         if (!password_verify($pass . '@' . $name, substr($p, 1))) {
-            return [
-                'description' => i(defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.'),
-                'status' => 401
-            ];
+            $r['description'] = i(defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.');
+            $r['status'] = 401;
+            return $r;
         }
     } else {
         if ($pass !== $p) {
-            return [
-                'description' => i(defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.'),
-                'status' => 401
-            ];
+            $r['description'] = i(defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.');
+            $r['status'] = 401;
+            return $r;
         }
     }
     delete($try_file);
@@ -87,18 +81,20 @@ if (0 === strpos($key, '@')) {
     // current user data, but the associated JWT’s `jti` field value file does not exist, then the JWT token cannot be
     // refreshed using it.
     content($token_file, $token_value, 0600);
-    return [
-        'description' => i('OK.'),
-        'status' => 200,
-        'token' => x\hub\x([
-            'aud' => $peer,
-            'exp' => $now + $validity,
-            'iat' => $now,
-            'jti' => $id,
-            'sub' => $key
-        ], $pepper),
-        'user' => $user
-    ];
+    $r['description'] = i('Okay.');
+    $r['status'] = 200;
+    $r['token'] = x\hub\x([
+        'aud' => $peer,
+        'exp' => $now + $validity,
+        'iat' => $now,
+        'jti' => $id,
+        'sub' => $key
+    ], $pepper);
+    $r['user'] = $user;
+    return $r;
 }
 
-return ['status' => 400];
+$r['description'] = i('Bad request.');
+$r['status'] = 400;
+
+return $r;

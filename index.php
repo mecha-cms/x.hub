@@ -1,6 +1,30 @@
 <?php
 
 namespace x\hub {
+    function r() {
+        if (!($h = \status()[1]['authorization'] ?? "") || 0 !== \strncasecmp($h, 'bearer ', 7) || "" === ($token = \trim(\substr($h, 7)))) {
+            return [
+                'description' => \i('Missing or invalid %s value.', 'JSON Web Token'),
+                'status' => 401
+            ];
+        }
+        \extract(\lot(), \EXTR_SKIP);
+        if (($r = v($token, (string) ($state->x->hub->pepper ?? "")))['status'] >= 400) {
+            return $r;
+        }
+        if (0 === \strpos($key = $r['?']['sub'], '@')) {
+            // Deleting the associated JWT file based on its `jti` field value will automatically reject the JWT token,
+            // even if it has not yet expired. This can be used to create a “log out” feature for JWT, which would not
+            // be possible with its native state-less design alone.
+            if (null === ($tok = \content(\LOT . \D . 'user' . \D . \substr($key, 1) . \D . '.hub' . \D . $r['?']['jti']))) {
+                $r['description'] = \i('Stale token.');
+                $r['status'] = 401;
+                return $r;
+            }
+            $r['?']['tok'] = $tok;
+        }
+        return $r;
+    }
     function route($content, $path, $query, $hash) {
         if ($content || !$path) {
             return $content;
@@ -65,25 +89,6 @@ namespace x\hub {
         ]);
         return \json_encode(['status' => $status]);
     }
-    function status() {
-        if (!($h = \status()[1]['authorization'] ?? "") || 0 !== \strncasecmp($h, 'bearer ', 7) || "" === ($token = \trim(\substr($h, 7)))) {
-            return 401;
-        }
-        \extract(\lot(), \EXTR_SKIP);
-        if (\is_int($r = v($token, (string) ($state->x->hub->pepper ?? "")))) {
-            return $r;
-        }
-        if (0 === \strpos($key = $r['sub'], '@')) {
-            // Deleting the associated JWT file based on its `jti` field value will automatically reject the JWT token,
-            // even if it has not yet expired. This can be used to create a “log out” feature for JWT, which would not
-            // be possible with its native state-less design alone.
-            if (null === ($tok = \content(\LOT . \D . 'user' . \D . \substr($key, 1) . \D . '.hub' . \D . $r['jti']))) {
-                return 401;
-            }
-            $r['tok'] = $tok;
-        }
-        return $r;
-    }
     function user($r) {
         if (\is_int($r)) {
             return ['status' => -1];
@@ -101,17 +106,26 @@ namespace x\hub {
         return ['status' => -1];
     }
     function v(string $token, string $pepper) {
-        $r = \explode('.', $token);
-        if (3 !== \count($r)) {
-            return 401; // Invalid token format
+        $r = [
+            '?' => null,
+            'status' => 401
+        ];
+        $t = \explode('.', $token);
+        if (3 !== \count($t)) {
+            $r['description'] = \i('Invalid JSON Web Token format.');
+            return $r;
         }
-        if (!\hash_equals($r[2], b64\x(\hash_hmac('sha256', $r[0] . '.' . $r[1], $pepper, true)))) {
-            return 401; // Invalid token signature
+        if (!\hash_equals($t[2], b64\x(\hash_hmac('sha256', $t[0] . '.' . $t[1], $pepper, true)))) {
+            $r['description'] = \i('Invalid JSON Web Token signature.');
+            return $r;
         }
-        $r = \json_decode(b64\v($r[1]), true);
-        if (($r['exp'] ?? 0) < \time()) {
-            return 401; // Stale token
+        $r['?'] = \json_decode(b64\v($t[1]), true);
+        if (($r['?']['exp'] ?? 0) < \time()) {
+            $r['description'] = \i('Stale token.');
+            return $r;
         }
+        $r['description'] = 'Okay.';
+        $r['status'] = 200;
         return $r;
     }
     function x(array $data, string $pepper) {
