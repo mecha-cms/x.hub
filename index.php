@@ -40,7 +40,7 @@ namespace x\hub {
     function route__hub($content, $path, $query, $hash) {
         \type('application/json');
         $folder = __DIR__ . \D . 'engine' . \D . 'r';
-        foreach (\step($path, '/') as $k => $v) {
+        foreach (\step(\rawurldecode($path), '/') as $k => $v) {
             if (\is_file($file = $folder . \D . 'route' . \strtr($v, '/', \D) . '.php')) {
                 $r = (function ($f, $path, $query, $hash) {
                     \extract(\lot(), \EXTR_SKIP);
