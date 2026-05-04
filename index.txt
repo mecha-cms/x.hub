@@ -65,7 +65,7 @@ form.addEventListener('submit', function (e) {
         key = '@' + key;
     }
     // Verify user account…
-    fetch('/hub/try/user', {
+    fetch('/hub/enter', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ key, pass, peer })
@@ -157,16 +157,29 @@ Option | Description
 `sort` | -
 `x` | -
 
-#### User
+#### Enter
 
 ~~~ .http
-POST /hub/try/user
+POST /hub/enter
 authorization: bearer <token>
 content-type: application/json
 
 {
   "key": <user_key>,
   "pass": <user_pass>,
+  "peer": <application_id>
+}
+~~~
+
+#### Exit
+
+~~~ .http
+POST /hub/exit
+authorization: bearer <token>
+content-type: application/json
+
+{
+  "key": <user_key>,
   "peer": <application_id>
 }
 ~~~

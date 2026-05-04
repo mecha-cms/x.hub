@@ -16,7 +16,7 @@ namespace x\hub {
             // Deleting the associated JWT file based on its `jti` field value will automatically reject the JWT token,
             // even if it has not yet expired. This can be used to create a “log out” feature for JWT, which would not
             // be possible with its native state-less design alone.
-            if (null === ($tok = \content(\LOT . \D . 'user' . \D . \substr($key, 1) . \D . '+' . \D . '.hub' . \D . $r['?']['jti']))) {
+            if (null === ($tok = \content(\LOT . \D . 'user' . \D . \substr($key, 1) . \D . '+' . \D . '.hub' . \D . $r['?']['aud'] . \D . $r['?']['jti']))) {
                 $r['description'] = \i('Stale token.');
                 $r['status'] = 401;
                 return $r;
@@ -142,5 +142,27 @@ namespace x\hub\b64 {
     }
     function x(string $v) {
         return \rtrim(\strtr(\base64_encode($v), '+/', '-_'), '=');
+    }
+}
+
+namespace x\hub\is {
+    function blob($f) {
+        return file($f) && !text($f);
+    }
+    function file($f) {
+        return $f instanceof \File;
+    }
+    function folder($f) {
+        return $f instanceof \Folder;
+    }
+    function text($f) {
+        if (!file($f)) {
+            return false;
+        }
+        $text = 'image/svg+xml' === ($type = $f->type ?? "") || 0 === \strpos($type, 'text/');
+        if (0 === \strpos($type, 'application/')) {
+            $text = false !== \strpos(',atom+xml,javascript,json,ld+json,mathml+xml,php,rss+xml,soap+xml,vnd.google-earth.kml+xml,x-empty,x-httpd-php,x-httpd-php-source,x-javascript,x-php,xhtml+xml,xml,', ',' . \substr($type, 12) . ',');
+        }
+        return $text || false === \strpos(\fread(\fopen($f->path, 'rb'), 1024), "\0");
     }
 }

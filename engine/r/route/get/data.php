@@ -91,7 +91,7 @@ if (!($path = path(LOT . D . ($f = $path)))) {
 
 $r['has']['parent'] = substr_count($f, '/') > 0;
 
-$f = ($d = is_dir($path)) ? new Folder($path) : new File($path);
+$f = is_dir($path) ? new Folder($path) : new File($path);
 
 $data = [
     '_seal' => $f->_seal,
@@ -111,24 +111,25 @@ $parent = $f->parent;
 if ($r['has']['parent']) {
     $data['parent'] = [
         '_seal' => $parent->_seal,
-        // '_size' => $parent->_size,
+        '_size' => null, // Use `/hub/+/folder._size/…`
         '_time' => $parent->_time,
         'id' => $parent->id,
         'is' => [
             'blob' => false,
             'file' => false,
-            'folder' => true
+            'folder' => true,
+            'text' => false
         ],
         'link' => (string) $parent->link,
         'name' => $parent->name,
         'route' => $parent->route,
         'seal' => $parent->seal,
-        // 'size' => $parent->size,
+        'size' => null, // Use `/hub/+/folder.size/…`
         'time' => (string) $parent->time
     ];
 }
 
-if ($d) {
+if (x\hub\is\folder($f)) {
     $values = g($f->path, $x, $deep, false);
     $data['children'] = [];
     $data['total'] = $total = count($values);
@@ -150,23 +151,27 @@ if ($d) {
         $values = $values->chunk($chunk, $part - 1);
     }
     foreach ($values as $v) {
-        $ff = ($dd = is_dir($v)) ? new Folder($v) : new File($v);
+        $ff = is_dir($v) ? new Folder($v) : new File($v);
         $rr = [];
         $rr['_seal'] = $ff->_seal;
-        $rr['_size'] = $ff->_size;
         $rr['_time'] = $ff->_time;
         $rr['id'] = $ff->id;
-        $rr['is']['blob'] = !$dd && 0 !== strpos($ff->type ?? "", 'text/') && false !== strpos(fread(fopen($ff->path, 'rb'), 1024), "\0");
-        $rr['is']['file'] = !($rr['is']['folder'] = $dd);
+        $rr['is']['blob'] = x\hub\is\blob($ff);
+        $rr['is']['file'] = x\hub\is\file($ff);
+        $rr['is']['folder'] = x\hub\is\folder($ff);
+        $rr['is']['text'] = x\hub\is\text($ff);
         $rr['link'] = (string) $ff->link;
         $rr['name'] = $ff->name;
         $rr['route'] = $ff->route;
         $rr['seal'] = $ff->seal;
-        $rr['size'] = $ff->size;
         $rr['time'] = (string) $ff->time;
-        if (!$dd) {
+        if (x\hub\is\file($ff)) {
+            $rr['_size'] = $ff->_size;
+            $rr['size'] = $ff->size;
             $rr['type'] = $ff->type;
             $rr['x'] = $ff->x;
+        } else {
+            $rr['_size'] = $rr['size'] = null; // Use `/hub/+/folder.size/…`
         }
         ksort($rr);
         ksort($rr['is']);
@@ -206,8 +211,10 @@ if ($d) {
 
 $r['data'] = $data;
 $r['description'] = i('Okay.');
-$r['is']['blob'] = !$d && 0 !== strpos($f->type ?? "", 'text/') && false !== strpos(fread(fopen($f->path, 'rb'), 1024), "\0");
-$r['is']['file'] = !($r['is']['folder'] = $d);
+$r['is']['blob'] = x\hub\is\blob($f);
+$r['is']['file'] = x\hub\is\file($f);
+$r['is']['folder'] = x\hub\is\folder($f);
+$r['is']['text'] = x\hub\is\text($f);
 $r['status'] = 200;
 
 !empty($r) && ksort($r);
