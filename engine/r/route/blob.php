@@ -19,7 +19,7 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
     return $r;
 }
 
-$path = substr(rawurldecode($path), 10); // `strlen('/get/blob/')`
+$path = substr(rawurldecode($path), 6); // `strlen('/blob/')`
 
 if (!(is_string($path) && "" !== $path)) {
     $r['description'] = i('Bad request.');
@@ -27,7 +27,7 @@ if (!(is_string($path) && "" !== $path)) {
     return $r;
 }
 
-if (!($path = path(LOT . D . $path))) {
+if (!($path = path(PATH . D . $path))) {
     $r['description'] = i('File does not exist.');
     $r['status'] = 404;
     return $r;

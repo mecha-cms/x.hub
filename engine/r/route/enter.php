@@ -87,15 +87,15 @@ if (0 === strpos($key, '@')) {
     // current user data, but the associated JWT’s `jti` field value file does not exist, then the JWT token cannot be
     // refreshed using it.
     content($token_file, $token_value, 0600);
-    $r['description'] = i('Okay.');
-    $r['status'] = 200;
-    $r['token'] = x\hub\x([
+    $r['data']['hub'] = x\hub\x([
         'aud' => $peer,
         'exp' => $now + $validity,
         'iat' => $now,
         'jti' => $id,
         'sub' => $key
     ], $pepper);
+    $r['description'] = i('Okay.');
+    $r['status'] = 200;
     $r['user'] = $user;
     return $r;
 }

@@ -19,7 +19,7 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
     return $r;
 }
 
-$path = substr(rawurldecode($path), 10); // `strlen('/get/data/')`
+$path = substr(rawurldecode($path), 4); // `strlen('/at/')`
 
 $chunk = $_GET['chunk'] ?? 5;
 $deep = $_GET['deep'] ?? 0;
@@ -83,13 +83,11 @@ if (is_string($sort[1]) && 0 === strpos($sort[1], '__')) {
     return $r;
 }
 
-if (!($path = path(LOT . D . ($f = $path)))) {
+if (!($path = path(PATH . D . $path))) {
     $r['description'] = i('File or folder does not exist.');
     $r['status'] = 404;
     return $r;
 }
-
-$r['has']['parent'] = substr_count($f, '/') > 0;
 
 $f = is_dir($path) ? new Folder($path) : new File($path);
 
@@ -106,26 +104,26 @@ $data = [
     'time' => (string) $f->time
 ];
 
-$parent = $f->parent;
-
-if ($r['has']['parent']) {
+if ($r['has']['parent'] = false !== strpos(substr($path, strlen(PATH . D)), D)) {
+    $ff = $f->parent;
+    $data['$']=[];
     $data['parent'] = [
-        '_seal' => $parent->_seal,
-        '_size' => null, // Use `/hub/+/folder._size/…`
-        '_time' => $parent->_time,
-        'id' => $parent->id,
+        '_seal' => $ff->_seal,
+        '_size' => null, // Use `/hub/+/_size/…`
+        '_time' => $ff->_time,
+        'id' => $ff->id,
         'is' => [
             'blob' => false,
             'file' => false,
             'folder' => true,
             'text' => false
         ],
-        'link' => (string) $parent->link,
-        'name' => $parent->name,
-        'route' => $parent->route,
-        'seal' => $parent->seal,
-        'size' => null, // Use `/hub/+/folder.size/…`
-        'time' => (string) $parent->time
+        'link' => (string) $ff->link,
+        'name' => $ff->name,
+        'route' => $ff->route,
+        'seal' => $ff->seal,
+        'size' => null, // Use `/hub/+/size/…`
+        'time' => (string) $ff->time
     ];
 }
 
@@ -171,7 +169,7 @@ if (x\hub\is\folder($f)) {
             $rr['type'] = $ff->type;
             $rr['x'] = $ff->x;
         } else {
-            $rr['_size'] = $rr['size'] = null; // Use `/hub/+/folder.size/…`
+            $rr['_size'] = $rr['size'] = null; // Use `/hub/+/size/…`
         }
         ksort($rr);
         ksort($rr['is']);
@@ -200,10 +198,9 @@ if (x\hub\is\folder($f)) {
         'sort' => 1,
         'x' => 1
     ])) {
-        return [
-            'description' => i('Bad request.'),
-            'status' => 400
-        ];
+        $r['description'] = i('Bad request.');
+        $r['status'] = 400;
+        return $r;
     }
 }
 

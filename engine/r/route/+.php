@@ -19,22 +19,43 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
     return $r;
 }
 
-$path = substr(rawurldecode($path), 15); // `strlen('/+/folder.size/')`
+$path = substr(rawurldecode($path), 3); // `strlen('/+/')`
 
+[$key, $path] = explode('/', $path, 2);
 if (!(is_string($path) && "" !== $path)) {
     $r['description'] = i('Bad request.');
     $r['status'] = 400;
     return $r;
 }
 
-if (!is_dir($path = path(LOT . D . $path))) {
-    $r['description'] = i('Folder does not exist.');
+if (!($path = path(PATH . D . $path))) {
+    $r['description'] = i('File or folder does not exist.');
     $r['status'] = 404;
     return $r;
 }
 
+// TODO: Support more key(s)
+if (!in_array($key, [
+    '_seal',
+    '_size',
+    '_time',
+    'content',
+    'id',
+    'link',
+    'name',
+    'route',
+    'seal',
+    'size',
+    'time',
+    'x'
+], true)) {
+    $r['description'] = i('Bad request.');
+    $r['status'] = 400;
+    return $r;
+}
+
+$r['data'][$key] = (is_dir($path) ? new Folder($path) : new File($path))->{$key};
 $r['description'] = i('Okay.');
 $r['status'] = 200;
-$r['value'] = (new Folder($path))->size;
 
 return $r;

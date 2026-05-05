@@ -87,7 +87,10 @@ namespace x\hub {
             'expires' => '0',
             'pragma' => 'no-cache'
         ]);
-        return \json_encode(['status' => $status]);
+        return \json_encode([
+            'description' => \i('Route does not exist.'),
+            'status' => $status
+        ]);
     }
     function user($r) {
         if (\is_int($r)) {
@@ -106,10 +109,7 @@ namespace x\hub {
         return ['status' => -1];
     }
     function v(string $token, string $pepper) {
-        $r = [
-            '?' => null,
-            'status' => 401
-        ];
+        $r = ['?' => [], 'status' => 401];
         $t = \explode('.', $token);
         if (3 !== \count($t)) {
             $r['description'] = \i('Invalid JSON Web Token format.');
@@ -121,10 +121,13 @@ namespace x\hub {
         }
         $r['?'] = \json_decode(b64\v($t[1]), true);
         if (($r['?']['exp'] ?? 0) < \time()) {
+            if (0 === \strpos($key = $r['?']['sub'], '@')) {
+                \delete(\LOT . \D . 'user' . \D . \substr($key, 1) . \D . '+' . \D . '.hub' . \D . $r['?']['aud'] . \D . $r['?']['jti']);
+            }
             $r['description'] = \i('Stale token.');
             return $r;
         }
-        $r['description'] = 'Okay.';
+        $r['description'] = \i('Okay.');
         $r['status'] = 200;
         return $r;
     }

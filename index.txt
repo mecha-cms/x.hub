@@ -119,7 +119,7 @@ authorization: bearer <token>
 Gets a file as a ZIP file:
 
 ~~~ .http
-GET /hub/get/blob/{path_to_file}
+GET /hub/blob/{path_to_file}
 accept: application/zip
 authorization: bearer <token>
 ~~~
@@ -127,7 +127,7 @@ authorization: bearer <token>
 Gets a folder as a ZIP file:
 
 ~~~ .http
-GET /hub/get/blob/{path_to_folder}
+GET /hub/blob/{path_to_folder}
 accept: application/zip
 authorization: bearer <token>
 ~~~
@@ -135,13 +135,13 @@ authorization: bearer <token>
 #### Data
 
 ~~~ .http
-GET /hub/get/data/{path_to_file}
+GET /hub/at/{path_to_file}
 authorization: bearer <token>
 content-type: application/json
 ~~~
 
 ~~~ .http
-GET /hub/get/data/{path_to_folder}
+GET /hub/at/{path_to_folder}
 authorization: bearer <token>
 content-type: application/json
 ~~~
