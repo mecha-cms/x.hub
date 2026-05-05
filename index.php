@@ -35,6 +35,7 @@ namespace x\hub {
         if (0 !== \strpos($path, $route . '/')) {
             return $content;
         }
+        \Hook::let('content');
         return \Hook::fire('route.hub', [$content, '/' . \substr($path, \strlen($route) + 1), $query, $hash]);
     }
     function route__hub($content, $path, $query, $hash) {
@@ -76,7 +77,7 @@ namespace x\hub {
                     ], (array) ($r['headers'] ?? [])));
                 }
                 unset($r['headers']);
-                return \json_encode($r);
+                return \json_encode($r, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
             }
         }
         \status($status = 404, [
