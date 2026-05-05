@@ -34,7 +34,6 @@ if (!($path = path(PATH . D . $path))) {
     return $r;
 }
 
-// TODO: Support more key(s)
 if (!in_array($key, [
     '_seal',
     '_size',
@@ -54,7 +53,23 @@ if (!in_array($key, [
     return $r;
 }
 
-$r['data'][$key] = (is_dir($path) ? new Folder($path) : new File($path))->{$key};
+$f = is_dir($path) ? new Folder($path) : new File($path);
+
+if ('content' === $key && !x\hub\is\text($f)) {
+    $r['description'] = i('Unsupported media type.');
+    $r['status'] = 415;
+    return $r;
+}
+
+if (($value = $f->{$key}) && in_array($key, ['link', 'time'], true)) {
+    $value = (string) $value;
+}
+
+if (!empty($_GET['base64'])) {
+    $value = base64_encode($value);
+}
+
+$r['data'][$key] = $value;
 $r['description'] = i('Okay.');
 $r['status'] = 200;
 

@@ -106,7 +106,6 @@ $data = [
 
 if ($r['has']['parent'] = false !== strpos(substr($path, strlen(PATH . D)), D)) {
     $ff = $f->parent;
-    $data['$']=[];
     $data['parent'] = [
         '_seal' => $ff->_seal,
         '_size' => null, // Use `/hub/+/_size/…`
