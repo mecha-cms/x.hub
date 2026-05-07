@@ -60,7 +60,6 @@ if ('content' === $key) {
     }
     $r['data']['content'] = !empty($_GET['base64']) ? base64_encode($f->content) : $f->content;
     $r['data']['type'] = $f->type;
-    $r['data']['x'] = $f->x;
 } else if ('link' === $key) {
     $r['data']['link'] = (string) $f->link;
 } else if (in_array($key, ['seal', 'size', 'time'], true)) {
