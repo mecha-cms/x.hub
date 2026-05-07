@@ -35,9 +35,6 @@ if (!($path = path(PATH . D . $path))) {
 }
 
 if (!in_array($key, [
-    '_seal',
-    '_size',
-    '_time',
     'content',
     'id',
     'link',
@@ -55,21 +52,24 @@ if (!in_array($key, [
 
 $f = is_dir($path) ? new Folder($path) : new File($path);
 
-if ('content' === $key && !x\hub\is\text($f)) {
-    $r['description'] = i('Unsupported media type.');
-    $r['status'] = 415;
-    return $r;
+if ('content' === $key) {
+    if (!x\hub\is\text($f)) {
+        $r['description'] = i('Unsupported media type.');
+        $r['status'] = 415;
+        return $r;
+    }
+    $r['data']['content'] = !empty($_GET['base64']) ? base64_encode($f->content) : $f->content;
+    $r['data']['type'] = $f->type;
+    $r['data']['x'] = $f->x;
+} else if ('link' === $key) {
+    $r['data']['link'] = (string) $f->link;
+} else if (in_array($key, ['seal', 'size', 'time'], true)) {
+    $r['data']['_' . $key] = $f->{'_' . $key};
+    $r['data'][$key] = (string) $f->{$key};
+} else {
+    $r['data'][$key] = $f->{$key};
 }
 
-if (($value = $f->{$key}) && in_array($key, ['link', 'time'], true)) {
-    $value = (string) $value;
-}
-
-if (!empty($_GET['base64'])) {
-    $value = base64_encode($value);
-}
-
-$r['data'][$key] = $value;
 $r['description'] = i('Okay.');
 $r['status'] = 200;
 
