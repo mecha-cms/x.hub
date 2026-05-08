@@ -263,7 +263,9 @@ if ('PUT' === $q) {
         // Create a new file
         if ($with_content) {
             if ($with_x) {
-                if (!x\hub\is\name($x)) {
+                // If file extension exists, make sure it is valid and does not start/end with a `.` and also make sure
+                // that current file path without the extension does not end with a `.` as well.
+                if (!x\hub\is\name($x) || '.' === substr($path, -1) || '.' === $x[0] || '.' === substr($x, -1)) {
                     $r['description'] = i('Bad request.');
                     $r['status'] = 400;
                     return $r;
@@ -293,7 +295,7 @@ if ('PUT' === $q) {
             $r['status'] = 201;
             return $r;
         }
-        // A `PUT` request to a folder entity without the `content` field is a request to create a folder
+        // A `PUT` request to a folder entity without the `content` field is a request to create a new folder
         if ($with_x) {
             $r['description'] = i('Bad request.');
             $r['status'] = 400;
@@ -323,7 +325,7 @@ if ('PUT' === $q) {
         return $r;
     }
     if (is_file($path)) {
-        $r['description'] = i('Bad request.'); // Use `PATCH` to modify a file
+        $r['description'] = i('Bad request.'); // Use `PATCH` to update a file
         $r['status'] = 400;
         return $r;
     }
