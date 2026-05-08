@@ -159,6 +159,31 @@ namespace x\hub\is {
     function folder($f) {
         return $f instanceof \Folder;
     }
+    function name($name) {
+        if (!\is_string($name) || "" === $name || '.' === $name || '..' === $name) {
+            return false;
+        }
+        $max = \strlen($name);
+        for ($i = 0; $i < $max; ++$i) {
+            $c = $name[$i];
+            if (!($c >= '0' && $c <= '9') && !($c >= 'A' && $c <= 'Z') && !($c >= 'a' && $c <= 'z') && false === \strpos('!#$()+-._@', $c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function route($route) {
+        if (!\is_string($route)) {
+            return false;
+        }
+        $r = [];
+        foreach (\explode('/', \trim($route, '/')) as $v) {
+            if (!name($v)) {
+                return false;
+            }
+        }
+        return true;
+    }
     function text($f) {
         if (!file($f)) {
             return false;

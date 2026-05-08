@@ -21,12 +21,33 @@ $q = $_SERVER['REQUEST_METHOD'];
 if ('DELETE' === $q) {}
 
 if ('GET' === $q) {
-    $chunk = $_GET['chunk'] ?? 5;
-    $deep = $_GET['deep'] ?? 0;
-    $limit = $_GET['limit'] ?? $chunk;
-    $part = $_GET['part'] ?? 1;
+    $with_at = array_key_exists('at', $_GET);
+    $with_chunk = array_key_exists('chunk', $_GET);
+    $with_deep = array_key_exists('deep', $_GET);
+    $with_limit = array_key_exists('limit', $_GET);
+    $with_part = array_key_exists('part', $_GET);
+    $with_sort = array_key_exists('sort', $_GET);
+    $with_x = array_key_exists('x', $_GET);
+    $at = $with_at ? $_GET['at'] : 0;
+    $chunk = $with_chunk ? $_GET['chunk'] : 5;
+    $deep = $with_deep ? $_GET['deep'] : 0;
+    $limit = $with_limit ? $_GET['limit'] : $chunk;
+    $part = $with_part ? $_GET['part'] : 1;
     $sort = array_replace([1, 'route'], (array) ($_GET['sort'] ?? 1));
     $x = $_GET['x'] ?? null;
+    if ($with_limit && ($with_chunk || $with_part)) {
+        $r['description'] = i('Bad request.');
+        $r['status'] = 400;
+        return $r;
+    }
+    if (!(is_int($at) && $at >= 0)) {
+        $r['description'] = i('Bad request.');
+        $r['status'] = 400;
+        return $r;
+    }
+    if (!$with_part && $with_at) {
+        $part = $at + 1;
+    }
     if (!(is_int($chunk) && $chunk > 0)) {
         $r['description'] = i('Bad request.');
         $r['status'] = 400;
@@ -47,17 +68,11 @@ if ('GET' === $q) {
         $r['status'] = 400;
         return $r;
     }
-    if (($with_limit = array_key_exists('limit', $_GET)) && (($with_chunk = array_key_exists('chunk', $_GET)) || ($with_part = array_key_exists('part', $_GET)))) {
-        $r['description'] = i('Bad request.');
-        $r['status'] = 400;
-        return $r;
-    }
     if (!(is_string($path) && "" !== $path)) {
         $r['description'] = i('Bad request.');
         $r['status'] = 400;
         return $r;
     }
-    $with_sort = array_key_exists('sort', $_GET);
     if (!(-1 === $sort[0] || 1 === $sort[0])) {
         $r['description'] = i('Bad request.');
         $r['status'] = 400;
@@ -172,6 +187,7 @@ if ('GET' === $q) {
             $r['query']['chunk'] = $chunk;
             $r['query']['part'] = $part;
         }
+        $r['query']['at'] = $at;
         $r['query']['deep'] = $deep;
         $r['query']['sort'] = $sort;
         $r['query']['x'] = $x;
@@ -179,6 +195,7 @@ if ('GET' === $q) {
         $data['type'] = $f->type;
         $data['x'] = $f->x;
         if (array_intersect_key($_GET, [
+            'at' => 1,
             'chunk' => 1,
             'deep' => 1,
             'limit' => 1,
@@ -214,7 +231,106 @@ if ('PATCH' === $q) {}
 
 if ('POST' === $q) {}
 
-if ('PUT' === $q) {}
+if ('PUT' === $q) {
+    $with_content = array_key_exists('content', $_REQUEST);
+    $with_name = array_key_exists('name', $_REQUEST);
+    $with_route = array_key_exists('route', $_REQUEST);
+    $with_seal = array_key_exists('seal', $_REQUEST);
+    $with_x = array_key_exists('x', $_REQUEST);
+    $content = $with_content ? $_REQUEST['content'] : "";
+    $name = $with_name ? $_REQUEST['name'] : "";
+    $route = $with_route ? $_REQUEST['route'] : "";
+    $seal = $with_seal ? $_REQUEST['seal'] : "";
+    $x = $with_x ? $_REQUEST['x'] : "";
+    if (!is_int($seal) && !is_string($seal)) {
+        $r['description'] = i('Bad request.');
+        $r['status'] = 400;
+        return $r;
+    }
+    if (!is_string($content) || !x\hub\is\name($name)) {
+        $r['description'] = i('Bad request.');
+        $r['status'] = 400;
+        return $r;
+    }
+    if ("" !== $route && !x\hub\is\route($route)) {
+        $r['description'] = i('Bad request.');
+        $r['status'] = 400;
+        return $r;
+    }
+    $route = trim($route);
+    if (is_dir($path = path(PATH . D . $path))) {
+        $path .= ("" !== $route ? D . $route : "") . D . $name;
+        // Create a new file
+        if ($with_content) {
+            if ($with_x) {
+                if (!x\hub\is\name($x)) {
+                    $r['description'] = i('Bad request.');
+                    $r['status'] = 400;
+                    return $r;
+                }
+                $path .= '.' . $x;
+            }
+            if (is_dir($path)) {
+                $r['description'] = i('Path already exists as a folder.');
+                $r['status'] = 409;
+                return $r;
+            }
+            if (is_file($path)) {
+                $r['description'] = i('File already exists.');
+                $r['status'] = 409;
+                return $r;
+            }
+            if (false === file_put_contents($path, $content)) {
+                $r['description'] = i('Internal server error.');
+                $r['status'] = 500;
+                return $r;
+            }
+            // Display the result
+            $_SERVER['REQUEST_METHOD'] = 'GET';
+            $path = '/at/' . strtr(substr($path, strlen(PATH . D)), D, '/');
+            $r = require __FILE__;
+            $r['description'] = i('Created.');
+            $r['status'] = 201;
+            return $r;
+        }
+        // A `PUT` request to a folder entity without the `content` field is a request to create a folder
+        if ($with_x) {
+            $r['description'] = i('Bad request.');
+            $r['status'] = 400;
+            return $r;
+        }
+        if (is_dir($path)) {
+            $r['description'] = i('Folder already exists.');
+            $r['status'] = 409;
+            return $r;
+        }
+        if (is_file($path)) {
+            $r['description'] = i('Path already exists as a file.');
+            $r['status'] = 409;
+            return $r;
+        }
+        if (!mkdir($path, 0775, true)) {
+            $r['description'] = i('Internal server error.');
+            $r['status'] = 500;
+            return $r;
+        }
+        // Display the result
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $path = '/at/' . strtr(substr($path, strlen(PATH . D)), D, '/');
+        $r = require __FILE__;
+        $r['description'] = i('Created.');
+        $r['status'] = 201;
+        return $r;
+    }
+    if (is_file($path)) {
+        $r['description'] = i('Bad request.'); // Use `PATCH` to modify a file
+        $r['status'] = 400;
+        return $r;
+    }
+    $r['description'] = i('File or folder does not exist.');
+    $r['status'] = 404;
+    return $r;
+}
 
 $r['description'] = i('Method not allowed.');
 $r['status'] = 405;

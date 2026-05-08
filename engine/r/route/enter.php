@@ -15,14 +15,8 @@ $key = $_POST['key'] ?? "";
 $pass = $_POST['pass'] ?? "";
 $peer = $_POST['peer'] ?? ip() ?? "";
 
-if (!is_string($key) || !is_string($pass) || !is_string($peer) || "" === $key || "" === $pass || "" === $peer) {
+if (!is_string($key) || !is_string($pass) || !x\hub\is\name($peer) || "" === $key || "" === $pass) {
     $r['description'] = i('Bad request.');
-    $r['status'] = 400;
-    return $r;
-}
-
-if ('.' === $peer || '..' === $peer || strspn($peer, '-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz') !== strlen($peer)) {
-    $r['description'] = i('Invalid peer value.');
     $r['status'] = 400;
     return $r;
 }
