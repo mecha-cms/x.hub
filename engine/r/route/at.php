@@ -44,7 +44,48 @@ if (!empty($deny)) {
     }
 }
 
-if ('DELETE' === $q) {}
+if ('DELETE' === $q) {
+    if (!($path = stream_resolve_include_path(PATH . D . $path))) {
+        $r['description'] = i('File or folder does not exist.');
+        $r['status'] = 404;
+        return $r;
+    }
+    if (is_dir($path)) {
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+        foreach ($it as $v) {
+            if ($v->isDir()) {
+                rmdir($v->getPathname());
+            } else {
+                unlink($v->getPathname());
+            }
+        }
+        rmdir($path);
+        $parent = dirname($path);
+        while ('.' !== $parent && D !== $parent && PATH !== $parent && is_dir($parent)) {
+            if (array_diff(scandir($parent), ['.', '..'])) {
+                break;
+            }
+            rmdir($parent);
+            $parent = dirname($parent);
+        }
+        status(204); // Success!
+        type('text/plain');
+        exit;
+    }
+    if (is_file($path)) {
+        if (!unlink($path)) {
+            $r['description'] = i('Internal server error.');
+            $r['status'] = 500;
+            return $r;
+        }
+        status(204); // Success!
+        type('text/plain');
+        exit;
+    }
+    $r['description'] = i('Bad request.');
+    $r['status'] = 400;
+    return $r;
+}
 
 if ('GET' === $q) {
     $with_at = array_key_exists('at', $_GET);
