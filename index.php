@@ -159,18 +159,18 @@ namespace x\hub\is {
     function folder($f) {
         return $f instanceof \Folder;
     }
-    function name($name) {
+    function name($name, $allow = '!#$()+-._@') {
         if (!\is_string($name) || "" === $name || '.' === $name || '..' === $name) {
             return false;
         }
         $max = \strlen($name);
         for ($i = 0; $i < $max; ++$i) {
             $c = $name[$i];
-            if (!($c >= '0' && $c <= '9') && !($c >= 'A' && $c <= 'Z') && !($c >= 'a' && $c <= 'z') && false === \strpos('!#$()+-._@', $c)) {
+            if (!($c >= '0' && $c <= '9') && !($c >= 'A' && $c <= 'Z') && !($c >= 'a' && $c <= 'z') && false === \strpos($allow, $c)) {
                 return false;
             }
         }
-        return true;
+        return '.' !== \substr($name, -1);
     }
     function route($route) {
         if (!\is_string($route)) {
@@ -192,6 +192,15 @@ namespace x\hub\is {
         if (0 === \strpos($type, 'application/')) {
             $text = false !== \strpos(',atom+xml,javascript,json,ld+json,mathml+xml,php,rss+xml,soap+xml,vnd.google-earth.kml+xml,x-empty,x-httpd-php,x-httpd-php-source,x-javascript,x-php,xhtml+xml,xml,', ',' . \substr($type, 12) . ',');
         }
-        return $text || false === \strpos(\fread(\fopen($f->path, 'rb'), 1024), "\0");
+        if (!$text) {
+            $f = \fopen($f->path, 'rb');
+            $test = \fread($f, 1024);
+            \fclose($f);
+            return false === \strpos($test, "\0");
+        }
+        return true;
+    }
+    function x($x) {
+        return name($x, '.') && '.' !== $x[0] && '.' !== \substr($x, -1);
     }
 }

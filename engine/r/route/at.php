@@ -14,9 +14,35 @@ if (defined('TEST') && TEST) {} else {
     unset($r['?']);
 }
 
-$path = substr(rawurldecode($path), 4); // `strlen('/at/')`
+$deny = (array) a($state->x->hub->deny ?? []);
+$omit = (array) a($state->x->hub->omit ?? []);
+
+$path = strtr(substr(rawurldecode($path), 4), '/', D); // `strlen('/at/')`
 
 $q = $_SERVER['REQUEST_METHOD'];
+
+if (!empty($deny)) {
+    $test = $deny['/' . $path] ?? 0;
+    if (!empty($test)) {
+        if (is_array($test)) {
+            if (!empty($test[$q])) {
+                $r['description'] = i('Bad request.');
+                $r['status'] = 400;
+                return $r;
+            }
+        } else {
+            $r['description'] = i('Forbidden.');
+            $r['status'] = 403;
+            return $r;
+        }
+    }
+    $test = $deny[basename($path)] ?? 0;
+    if (!empty($test)) {
+        $r['description'] = i('Forbidden.');
+        $r['status'] = 403;
+        return $r;
+    }
+}
 
 if ('DELETE' === $q) {}
 
@@ -35,6 +61,7 @@ if ('GET' === $q) {
     $part = $with_part ? $_GET['part'] : 1;
     $sort = array_replace([1, 'route'], (array) ($_GET['sort'] ?? 1));
     $x = $_GET['x'] ?? null;
+    // Either use the `limit` parameter alone, or use the `chunk` parameter with the optional `part` parameter
     if ($with_limit && ($with_chunk || $with_part)) {
         $r['description'] = i('Bad request.');
         $r['status'] = 400;
@@ -45,6 +72,8 @@ if ('GET' === $q) {
         $r['status'] = 400;
         return $r;
     }
+    // If the `at` parameter exists but the `part` parameter does not, assume that the `part` parameter value is the
+    // same as the `at` parameter value, plus `1`
     if (!$with_part && $with_at) {
         $part = $at + 1;
     }
@@ -89,7 +118,7 @@ if ('GET' === $q) {
         $r['status'] = 400;
         return $r;
     }
-    if (!($path = path(PATH . D . $path))) {
+    if (!($path = stream_resolve_include_path(PATH . D . $path))) {
         $r['description'] = i('File or folder does not exist.');
         $r['status'] = 404;
         return $r;
@@ -129,10 +158,19 @@ if ('GET' === $q) {
         ];
     }
     if (x\hub\is\folder($f)) {
-        $values = g($f->path, $x, $deep, false);
+        $values = new Batch(g($f->path, $x, $deep, false));
+        if (!empty($omit)) {
+            $values = $values->not(function ($v) use ($omit) {
+                $v = strtr(substr($v, strlen(PATH)), D, '/');
+                if (!empty($omit[$v]) || !empty($omit[basename($v)])) {
+                    return true;
+                }
+                return false;
+            });
+        }
         $data['children'] = [];
-        $data['total'] = $total = count($values);
-        $values = (new Batch($values))->sort(function ($a, $b) use ($sort, $with_sort) {
+        $data['total'] = $total = $values->count();
+        $values = $values->sort(function ($a, $b) use ($sort, $with_sort) {
             $a = ($a_is_folder = is_dir($a)) ? new Folder($a) : new File($a);
             $b = ($b_is_folder = is_dir($b)) ? new Folder($b) : new File($b);
             if (!$with_sort) {
@@ -212,18 +250,14 @@ if ('GET' === $q) {
     $data['is']['file'] = x\hub\is\file($f);
     $data['is']['folder'] = x\hub\is\folder($f);
     $data['is']['text'] = x\hub\is\text($f);
+    !empty($data['has']) && ksort($data['has']);
+    !empty($data['is']) && ksort($data['is']);
     ksort($data);
-    ksort($data['has']);
-    ksort($data['is']);
     $r['data'] = $data;
     $r['description'] = i('Okay.');
     $r['status'] = 200;
+    !empty($r['query']) && ksort($r['query']);
     ksort($r);
-    if (!empty($r['query'])) {
-        ksort($r['query']);
-    } else {
-        $r['query'] = (object) []; // Force object in the JSON output
-    }
     return $r;
 }
 
@@ -247,7 +281,13 @@ if ('PUT' === $q) {
         $r['status'] = 400;
         return $r;
     }
-    if (!is_string($content) || !x\hub\is\name($name)) {
+    if (!is_string($content)) {
+        $r['description'] = i('Bad request.');
+        $r['status'] = 400;
+        return $r;
+    }
+    // The `name` field can be left blank if the `x` field exists and its value is valid
+    if (!("" === $name && $with_x && x\hub\is\x($x) || x\hub\is\name($name))) {
         $r['description'] = i('Bad request.');
         $r['status'] = 400;
         return $r;
@@ -257,15 +297,13 @@ if ('PUT' === $q) {
         $r['status'] = 400;
         return $r;
     }
-    $route = trim($route);
-    if (is_dir($path = path(PATH . D . $path))) {
-        $path .= ("" !== $route ? D . $route : "") . D . $name;
+    $route = trim($route, '/');
+    if (is_dir($path = stream_resolve_include_path(PATH . D . $path))) {
+        $path .= ("" !== $route ? D . strtr($route, '/', D) : "") . ("" !== $name ? D . $name : "");
         // Create a new file
         if ($with_content) {
             if ($with_x) {
-                // If file extension exists, make sure it is valid and does not start/end with a `.` and also make sure
-                // that current file path without the extension does not end with a `.` as well.
-                if (!x\hub\is\name($x) || '.' === substr($path, -1) || '.' === $x[0] || '.' === substr($x, -1)) {
+                if (!x\hub\is\x($x)) {
                     $r['description'] = i('Bad request.');
                     $r['status'] = 400;
                     return $r;
@@ -278,11 +316,28 @@ if ('PUT' === $q) {
                 return $r;
             }
             if (is_file($path)) {
-                $r['description'] = i('File already exists.');
+                $r['description'] = i('File already exists.'); // Use `PATCH` to rename/update a file
                 $r['status'] = 409;
                 return $r;
             }
-            if (false === file_put_contents($path, $content)) {
+            // First `is_dir()` check is to make sure that `mkdir()` is not executed on a folder that already exists
+            // Second `is_dir()` check is to make sure that folder could not be created due to other reason(s)
+            if (!is_dir($d = dirname($path)) && !mkdir($d, 0775, true) && !is_dir($d)) {
+                $r['description'] = i('Internal server error.');
+                $r['status'] = 500;
+                return $r;
+            }
+            if (
+                // Could not create temporary file
+                false === ($f = tempnam(dirname($path), '~')) ||
+                // Could create temporary file but could not write to it
+                false === file_put_contents($f, $content) ||
+                // Could write to it but could not rename it
+                !rename($f, $path)
+            ) {
+                if (is_file($f)) {
+                    unlink($f);
+                }
                 $r['description'] = i('Internal server error.');
                 $r['status'] = 500;
                 return $r;
@@ -291,18 +346,18 @@ if ('PUT' === $q) {
             $_SERVER['REQUEST_METHOD'] = 'GET';
             $path = '/at/' . strtr(substr($path, strlen(PATH . D)), D, '/');
             $r = require __FILE__;
-            $r['description'] = i('Created.');
+            $r['description'] = i('File created.');
             $r['status'] = 201;
             return $r;
         }
-        // A `PUT` request to a folder entity without the `content` field is a request to create a new folder
+        // A `PUT` request to a folder without the `content` field is a request to create a new folder
         if ($with_x) {
             $r['description'] = i('Bad request.');
             $r['status'] = 400;
             return $r;
         }
         if (is_dir($path)) {
-            $r['description'] = i('Folder already exists.');
+            $r['description'] = i('Folder already exists.'); // Use `PATCH` to rename/update a folder
             $r['status'] = 409;
             return $r;
         }
@@ -311,7 +366,7 @@ if ('PUT' === $q) {
             $r['status'] = 409;
             return $r;
         }
-        if (!mkdir($path, 0775, true)) {
+        if (!mkdir($path, 0775, true) && !is_dir($path)) {
             $r['description'] = i('Internal server error.');
             $r['status'] = 500;
             return $r;
@@ -320,16 +375,17 @@ if ('PUT' === $q) {
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $path = '/at/' . strtr(substr($path, strlen(PATH . D)), D, '/');
         $r = require __FILE__;
-        $r['description'] = i('Created.');
+        $r['description'] = i('Folder created.');
         $r['status'] = 201;
         return $r;
     }
+    // The parent path must be a folder
     if (is_file($path)) {
-        $r['description'] = i('Bad request.'); // Use `PATCH` to update a file
+        $r['description'] = i('Bad request.');
         $r['status'] = 400;
         return $r;
     }
-    $r['description'] = i('File or folder does not exist.');
+    $r['description'] = i('Folder does not exist.');
     $r['status'] = 404;
     return $r;
 }
