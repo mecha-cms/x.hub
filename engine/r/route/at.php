@@ -64,7 +64,7 @@ if ('delete' === $q) {
     $shift = strlen(PATH);
     if (is_dir($path)) {
         $log = [];
-        foreach (delete($path) as $k => $v) {
+        foreach (delete($path, false) as $k => $v) {
             if (null === $v) {
                 $r['description'] = i('Internal server error.');
                 $r['status'] = 500;
@@ -235,8 +235,10 @@ if ('get' === $q) {
             }
             return 1 === $sort[0] ? $a->{$sort[1]} <=> $b->{$sort[1]} : $b->{$sort[1]} <=> $a->{$sort[1]};
         });
-        if ($with_limit && false !== $limit) {
-            $values = $values->limit($limit);
+        if ($with_limit) {
+            if (false !== $limit) {
+                $values = $values->limit($limit);
+            }
         } else {
             $values = $values->chunk($chunk, $part - 1);
         }
