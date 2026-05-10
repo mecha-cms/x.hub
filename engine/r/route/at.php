@@ -7,6 +7,14 @@ if (($r = x\hub\r())['status'] >= 400) {
     return $r;
 }
 
+$r['can'] = [
+    'delete' => true,
+    'get' => true,
+    'patch' => true,
+    'post' => true,
+    'put' => true
+];
+
 $r['query'] = [];
 $r['user'] = x\hub\user($r['?']);
 
@@ -14,37 +22,38 @@ if (defined('TEST') && TEST) {} else {
     unset($r['?']);
 }
 
-$deny = (array) a($state->x->hub->deny ?? []);
-$omit = (array) a($state->x->hub->omit ?? []);
+$deny = (array) (State::get('x.hub.deny', true) ?? []);
+$omit = (array) (State::get('x.hub.omit', true) ?? []);
 
 $path = strtr(substr(rawurldecode($path), 4), '/', D); // `strlen('/at/')`
 
-$q = $_SERVER['REQUEST_METHOD'];
+$q = strtolower($_SERVER['REQUEST_METHOD'] ?? "");
 
 if (!empty($deny)) {
-    $test = $deny['/' . $path] ?? 0;
-    if (!empty($test)) {
+    if ($test = $deny['/' . $path] ?? $deny[basename($path)] ?? 0) {
         if (is_array($test)) {
+            foreach ($test as $k => $v) {
+                $r['can'][$k] = false;
+            }
             if (!empty($test[$q])) {
                 $r['description'] = i('Bad request.');
                 $r['status'] = 400;
+                ksort($r['can']);
                 return $r;
             }
         } else {
+            foreach ($r['can'] as $k => $v) {
+                $r['can'][$k] = false;
+            }
             $r['description'] = i('Forbidden.');
             $r['status'] = 403;
+            ksort($r['can']);
             return $r;
         }
     }
-    $test = $deny[basename($path)] ?? 0;
-    if (!empty($test)) {
-        $r['description'] = i('Forbidden.');
-        $r['status'] = 403;
-        return $r;
-    }
 }
 
-if ('DELETE' === $q) {
+if ('delete' === $q) {
     if (!($path = stream_resolve_include_path(PATH . D . $path))) {
         $r['description'] = i('File or folder does not exist.');
         $r['status'] = 404;
@@ -88,7 +97,7 @@ if ('DELETE' === $q) {
     return $r;
 }
 
-if ('GET' === $q) {
+if ('get' === $q) {
     $with_at = array_key_exists('at', $_GET);
     $with_chunk = array_key_exists('chunk', $_GET);
     $with_deep = array_key_exists('deep', $_GET);
@@ -129,7 +138,7 @@ if ('GET' === $q) {
         $r['status'] = 400;
         return $r;
     }
-    if (!(is_int($limit) && $limit > 0)) {
+    if (!(false === $limit || is_int($limit) && $limit > 0)) {
         $r['description'] = i('Bad request.');
         $r['status'] = 400;
         return $r;
@@ -226,7 +235,7 @@ if ('GET' === $q) {
             }
             return 1 === $sort[0] ? $a->{$sort[1]} <=> $b->{$sort[1]} : $b->{$sort[1]} <=> $a->{$sort[1]};
         });
-        if ($with_limit) {
+        if ($with_limit && false !== $limit) {
             $values = $values->limit($limit);
         } else {
             $values = $values->chunk($chunk, $part - 1);
@@ -303,11 +312,11 @@ if ('GET' === $q) {
     return $r;
 }
 
-if ('PATCH' === $q) {}
+if ('patch' === $q) {}
 
-if ('POST' === $q) {}
+if ('post' === $q) {}
 
-if ('PUT' === $q) {
+if ('put' === $q) {
     $with_content = array_key_exists('content', $_REQUEST);
     $with_name = array_key_exists('name', $_REQUEST);
     $with_route = array_key_exists('route', $_REQUEST);
@@ -318,7 +327,11 @@ if ('PUT' === $q) {
     $route = $with_route ? $_REQUEST['route'] : "";
     $seal = $with_seal ? $_REQUEST['seal'] : "";
     $x = $with_x ? $_REQUEST['x'] : "";
-    if (!is_int($seal) && !is_string($seal)) {
+    if ($with_seal && !(is_int($seal) && $seal >= 0 && $seal <= 0777 || is_string($seal) && 3 === strlen($seal) && (
+        $seal[0] >= '0' && $seal[0] <= '7' &&
+        $seal[1] >= '0' && $seal[1] <= '7' &&
+        $seal[2] >= '0' && $seal[2] <= '7'
+    ))) {
         $r['description'] = i('Bad request.');
         $r['status'] = 400;
         return $r;

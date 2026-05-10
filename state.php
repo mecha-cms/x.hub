@@ -2,10 +2,18 @@
 
 return [
     'deny' => [
+        '/engine' => [
+            'delete' => 1,
+            'patch' => 1
+        ],
         '/engine/log' => 1,
+        '/lot' => [
+            'delete' => 1,
+            'patch' => 1
+        ],
         '/lot/.htaccess' => [
-            'DELETE' => 1,
-            'PATCH' => 1
+            'delete' => 1,
+            'patch' => 1
         ],
         'pass.json' => 1,
         'pass.txt' => 1,
