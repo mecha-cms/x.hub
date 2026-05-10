@@ -50,37 +50,38 @@ if ('DELETE' === $q) {
         $r['status'] = 404;
         return $r;
     }
+    $data = [];
+    $data['is']['file'] = !($data['is']['folder'] = is_dir($path));
+    $shift = strlen(PATH);
     if (is_dir($path)) {
-        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
-        foreach ($it as $v) {
-            if ($v->isDir()) {
-                rmdir($v->getPathname());
-            } else {
-                unlink($v->getPathname());
+        $log = [];
+        foreach (delete($path) as $k => $v) {
+            if (null === $v) {
+                $r['description'] = i('Internal server error.');
+                $r['status'] = 500;
+                return $r;
             }
+            $log[strtr(substr($k, $shift), D, '/')] = $v;
         }
-        rmdir($path);
-        $parent = dirname($path);
-        while ('.' !== $parent && D !== $parent && PATH !== $parent && is_dir($parent)) {
-            if (array_diff(scandir($parent), ['.', '..'])) {
-                break;
-            }
-            rmdir($parent);
-            $parent = dirname($parent);
-        }
-        status(204); // Success!
-        type('text/plain');
-        exit;
+        $data['log'] = $log;
+        !empty($data['is']) && ksort($data['is']);
+        $r['data'] = $data;
+        $r['description'] = i('Folder deleted.');
+        $r['status'] = 200;
+        return $r;
     }
     if (is_file($path)) {
-        if (!unlink($path)) {
+        if (null === delete($path)) {
             $r['description'] = i('Internal server error.');
             $r['status'] = 500;
             return $r;
         }
-        status(204); // Success!
-        type('text/plain');
-        exit;
+        $data['log'] = [strtr(substr($path, $shift), D, '/') => 1];
+        !empty($data['is']) && ksort($data['is']);
+        $r['data'] = $data;
+        $r['description'] = i('File deleted.');
+        $r['status'] = 200;
+        return $r;
     }
     $r['description'] = i('Bad request.');
     $r['status'] = 400;
