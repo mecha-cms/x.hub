@@ -1,59 +1,45 @@
 <?php
 
 if (($r = x\hub\r())['status'] >= 400) {
-    if (defined('TEST') && TEST) {} else {
+    if (!defined('TEST') || !TEST) {
         unset($r['?']);
     }
     return $r;
 }
 
-$r['can'] = [
-    'delete' => true,
-    'get' => true,
-    'patch' => true,
-    'post' => true,
-    'put' => true
-];
-
 $r['query'] = [];
 $r['user'] = x\hub\user($r['?']);
 
-if (defined('TEST') && TEST) {} else {
+if (!defined('TEST') || !TEST) {
     unset($r['?']);
 }
 
 $deny = (array) (State::get('x.hub.deny', true) ?? []);
 $omit = (array) (State::get('x.hub.omit', true) ?? []);
 
-$path = strtr(substr(rawurldecode($path), 4), '/', D); // `strlen('/at/')`
+$with_deny = !empty($deny);
+$with_omit = !empty($omit);
 
-$q = strtolower($_SERVER['REQUEST_METHOD'] ?? "");
+$p = strtolower($_SERVER['REQUEST_METHOD'] ?? "");
+$path = substr(rawurldecode($path), 4); // `strlen('/at/')`
 
-if (!empty($deny)) {
+if ($with_deny) {
     if ($test = $deny['/' . $path] ?? $deny[basename($path)] ?? 0) {
         if (is_array($test)) {
-            foreach ($test as $k => $v) {
-                $r['can'][$k] = false;
-            }
-            if (!empty($test[$q])) {
+            if (!empty($test[$p])) {
                 $r['description'] = i('Bad request.');
                 $r['status'] = 400;
-                ksort($r['can']);
                 return $r;
             }
         } else {
-            foreach ($r['can'] as $k => $v) {
-                $r['can'][$k] = false;
-            }
             $r['description'] = i('Forbidden.');
             $r['status'] = 403;
-            ksort($r['can']);
             return $r;
         }
     }
 }
 
-if ('delete' === $q) {
+if ('delete' === $p) {
     if (!($path = stream_resolve_include_path(PATH . D . $path))) {
         $r['description'] = i('File or folder does not exist.');
         $r['status'] = 404;
@@ -97,7 +83,7 @@ if ('delete' === $q) {
     return $r;
 }
 
-if ('get' === $q) {
+if ('get' === $p) {
     $with_at = array_key_exists('at', $_GET);
     $with_chunk = array_key_exists('chunk', $_GET);
     $with_deep = array_key_exists('deep', $_GET);
@@ -111,7 +97,7 @@ if ('get' === $q) {
     $limit = $with_limit ? $_GET['limit'] : $chunk;
     $part = $with_part ? $_GET['part'] : 1;
     $sort = array_replace([1, 'route'], (array) ($_GET['sort'] ?? 1));
-    $x = $_GET['x'] ?? null;
+    $x = $with_x ? $_GET['x'] : null;
     // Either use the `limit` parameter alone, or use the `chunk` parameter with the optional `part` parameter
     if ($with_limit && ($with_chunk || $with_part)) {
         $r['description'] = i('Bad request.');
@@ -169,6 +155,11 @@ if ('get' === $q) {
         $r['status'] = 400;
         return $r;
     }
+    if (!(0 === $x || 1 === $x || null === $x || is_string($x))) {
+        $r['description'] = i('Bad request.');
+        $r['status'] = 400;
+        return $r;
+    }
     if (!($path = stream_resolve_include_path(PATH . D . $path))) {
         $r['description'] = i('File or folder does not exist.');
         $r['status'] = 404;
@@ -176,94 +167,108 @@ if ('get' === $q) {
     }
     $f = is_dir($path) ? new Folder($path) : new File($path);
     $data = [
-        '_seal' => $f->_seal,
-        '_size' => $f->_size,
-        '_time' => $f->_time,
-        'id' => $f->id,
-        'link' => (string) $f->link,
-        'name' => $f->name,
-        'route' => $route = $f->route,
-        'seal' => $f->seal,
-        'size' => $f->size,
-        'time' => (string) $f->time
+        '_seal' => $f->_seal(),
+        '_size' => $f->_size(),
+        '_time' => $f->_time(),
+        'id' => $f->id(),
+        'link' => (string) $f->link(),
+        'name' => $f->name(),
+        'route' => $route = $f->route(),
+        'seal' => $f->seal(),
+        'size' => $f->size(),
+        'time' => (string) $f->time()
     ];
     if ($data['has']['parent'] = false !== strpos(substr($path, strlen(PATH . D)), D)) {
-        $ff = $f->parent;
+        $ff = $f->parent();
         $data['parent'] = [
-            '_seal' => $ff->_seal,
-            '_size' => null, // Use `/hub/+/size/…`
-            '_time' => $ff->_time,
-            'id' => $ff->id,
+            '_seal' => $ff->_seal(),
+            '_size' => null, // Use `/hub/size/…`
+            '_time' => $ff->_time(),
+            'id' => $ff->id(),
             'is' => [
                 'blob' => false,
                 'file' => false,
                 'folder' => true,
                 'text' => false
             ],
-            'link' => (string) $ff->link,
-            'name' => $ff->name,
-            'route' => $ff->route,
-            'seal' => $ff->seal,
-            'size' => null, // Use `/hub/+/size/…`
-            'time' => (string) $ff->time
+            'link' => (string) $ff->link(),
+            'name' => $ff->name(),
+            'route' => $ff->route(),
+            'seal' => $ff->seal(),
+            'size' => null, // Use `/hub/size/…`
+            'time' => (string) $ff->time()
         ];
     }
     if (x\hub\is\folder($f)) {
-        $values = new Batch(g($f->path, $x, $deep, false));
-        if (!empty($omit)) {
-            $values = $values->not(function ($v) use ($omit) {
-                $v = strtr(substr($v, strlen(PATH)), D, '/');
-                if (!empty($omit[$v]) || !empty($omit[basename($v)])) {
-                    return true;
+        $total = count($lot = y(g($f->path, $x, $deep)));
+        if ($with_omit) {
+            foreach ($lot as $k => $v) {
+                $k = strtr(substr($k, strlen(PATH)), D, '/');
+                if (!empty($omit[$k]) || !empty($omit[basename($k)])) {
+                    unset($lot[$k]);
                 }
-                return false;
-            });
+            }
+            $total = count($lot);
         }
-        $data['children'] = [];
-        $data['total'] = $total = $values->count();
-        $values = $values->sort(function ($a, $b) use ($sort, $with_sort) {
-            $a = ($a_is_folder = is_dir($a)) ? new Folder($a) : new File($a);
-            $b = ($b_is_folder = is_dir($b)) ? new Folder($b) : new File($b);
+        uksort($lot, function ($a, $b) use ($lot, $sort, $with_sort) {
             if (!$with_sort) {
                 // Folder first
-                if ($a_is_folder !== $b_is_folder) {
-                    return $a_is_folder ? -1 : 1;
+                if ($lot[$a] !== $lot[$b]) {
+                    return 0 === $lot[$a] ? -1 : 1;
                 }
             }
-            if (!isset($a->{$sort[1]}) || !isset($b->{$sort[1]})) {
-                return 0;
+            [$d, $k] = $sort;
+            if ('name' === $k) {
+                $a = pathinfo($a, PATHINFO_FILENAME);
+                $b = pathinfo($b, PATHINFO_FILENAME);
+            } else if ('seal' === $k) {
+                $a = fileperms($a) & 0777;
+                $b = fileperms($b) & 0777;
+            } else if ('size' === $k) {
+                // TODO
+            } else if ('time' === $k) {
+                $a = filectime($a);
+                $b = filectime($b);
+            } else if ('x' === $k) {
+                $a = pathinfo($a, PATHINFO_EXTENSION);
+                $b = pathinfo($b, PATHINFO_EXTENSION);
             }
-            return 1 === $sort[0] ? $a->{$sort[1]} <=> $b->{$sort[1]} : $b->{$sort[1]} <=> $a->{$sort[1]};
+            if (is_string($a) && is_string($b)) {
+                return 1 === $d ? strnatcmp($a, $b) : strnatcmp($b, $a);
+            }
+            return 1 === $d ? $a <=> $b : $b <=> $a;
         });
         if ($with_limit) {
             if (false !== $limit) {
-                $values = $values->limit($limit);
+                $total = count($lot = array_slice($lot, 0, $limit, true));
             }
         } else {
-            $values = $values->chunk($chunk, $part - 1);
+            $lot = array_slice($lot, ($part - 1) * $chunk, $chunk, true);
         }
-        foreach ($values as $v) {
-            $ff = is_dir($v) ? new Folder($v) : new File($v);
+        $data['children'] = [];
+        $data['total'] = $total;
+        foreach ($lot as $k => $v) {
+            $ff = 0 === $v ? new Folder($k) : new File($k);
             $rr = [];
-            $rr['_seal'] = $ff->_seal;
-            $rr['_time'] = $ff->_time;
-            $rr['id'] = $ff->id;
+            $rr['_seal'] = $ff->_seal();
+            $rr['_time'] = $ff->_time();
+            $rr['id'] = $ff->id();
             $rr['is']['blob'] = x\hub\is\blob($ff);
             $rr['is']['file'] = x\hub\is\file($ff);
             $rr['is']['folder'] = x\hub\is\folder($ff);
             $rr['is']['text'] = x\hub\is\text($ff);
-            $rr['link'] = (string) $ff->link;
-            $rr['name'] = $ff->name;
-            $rr['route'] = $ff->route;
-            $rr['seal'] = $ff->seal;
-            $rr['time'] = (string) $ff->time;
+            $rr['link'] = (string) $ff->link();
+            $rr['name'] = $ff->name();
+            $rr['route'] = $ff->route();
+            $rr['seal'] = $ff->seal();
+            $rr['time'] = (string) $ff->time();
             if (x\hub\is\file($ff)) {
-                $rr['_size'] = $ff->_size;
-                $rr['size'] = $ff->size;
-                $rr['type'] = $ff->type;
-                $rr['x'] = $ff->x;
+                $rr['_size'] = $ff->_size();
+                $rr['size'] = $ff->size();
+                $rr['type'] = $ff->type();
+                $rr['x'] = $ff->x();
             } else {
-                $rr['_size'] = $rr['size'] = null; // Use `/hub/+/size/…`
+                $rr['_size'] = $rr['size'] = null; // Use `/hub/size/…`
             }
             ksort($rr);
             ksort($rr['is']);
@@ -283,8 +288,8 @@ if ('get' === $q) {
         $r['query']['sort'] = $sort;
         $r['query']['x'] = $x;
     } else {
-        $data['type'] = $f->type;
-        $data['x'] = $f->x;
+        $data['type'] = $f->type();
+        $data['x'] = $f->x();
         if (array_intersect_key($_GET, [
             'at' => 1,
             'chunk' => 1,
@@ -314,11 +319,11 @@ if ('get' === $q) {
     return $r;
 }
 
-if ('patch' === $q) {}
+if ('patch' === $p) {}
 
-if ('post' === $q) {}
+if ('post' === $p) {}
 
-if ('put' === $q) {
+if ('put' === $p) {
     $with_content = array_key_exists('content', $_REQUEST);
     $with_name = array_key_exists('name', $_REQUEST);
     $with_route = array_key_exists('route', $_REQUEST);

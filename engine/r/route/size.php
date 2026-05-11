@@ -1,0 +1,63 @@
+<?php
+
+if (($r = x\hub\r())['status'] >= 400) {
+    if (!defined('TEST') || !TEST) {
+        unset($r['?']);
+    }
+    return $r;
+}
+
+$r['query'] = [];
+$r['user'] = x\hub\user($r['?']);
+
+if (!defined('TEST') || !TEST) {
+    unset($r['?']);
+}
+
+$deny = (array) (State::get('x.hub.deny', true) ?? []);
+
+$p = strtolower($_SERVER['REQUEST_METHOD'] ?? "");
+$path = substr(rawurldecode($path), 6); // `strlen('/size/')`
+
+if ('GET' !== $_SERVER['REQUEST_METHOD']) {
+    $r['description'] = i('Method not allowed.');
+    $r['status'] = 405;
+    return $r;
+}
+
+if (!empty($deny)) {
+    if ($test = $deny['/' . $path] ?? $deny[basename($path)] ?? 0) {
+        if (is_array($test)) {
+            if (!empty($test[$p])) {
+                $r['description'] = i('Bad request.');
+                $r['status'] = 400;
+                return $r;
+            }
+        } else {
+            $r['description'] = i('Forbidden.');
+            $r['status'] = 403;
+            return $r;
+        }
+    }
+}
+
+if (!(is_string($path) && "" !== $path)) {
+    $r['description'] = i('Bad request.');
+    $r['status'] = 400;
+    return $r;
+}
+
+if (!($path = stream_resolve_include_path(PATH . D . $path))) {
+    $r['description'] = i('File or folder does not exist.');
+    $r['status'] = 404;
+    return $r;
+}
+
+$f = is_dir($path) ? new Folder($path) : new File($path);
+
+$r['data']['_size'] = $f->_size();
+$r['data']['size'] = $f->size();
+$r['description'] = i('Okay.');
+$r['status'] = 200;
+
+return $r;
