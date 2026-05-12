@@ -40,6 +40,7 @@ if ($with_deny) {
 }
 
 if ('delete' === $p) {
+    $r['query'] = (object) $r['query'];
     if (!($path = stream_resolve_include_path(PATH . D . $path))) {
         $r['description'] = i('File or folder does not exist.');
         $r['status'] = 404;
