@@ -14,7 +14,7 @@ if (defined('TEST') && TEST) {} else {
 }
 
 if ('GET' !== $_SERVER['REQUEST_METHOD']) {
-    $r['description'] = i('Method not allowed.');
+    $r['description'] = 'Method not allowed.';
     $r['status'] = 405;
     return $r;
 }
@@ -22,13 +22,13 @@ if ('GET' !== $_SERVER['REQUEST_METHOD']) {
 $path = substr(rawurldecode($path), 6); // `strlen('/blob/')`
 
 if (!(is_string($path) && "" !== $path)) {
-    $r['description'] = i('Bad request.');
+    $r['description'] = 'Bad request.';
     $r['status'] = 400;
     return $r;
 }
 
 if (!($path = path(PATH . D . $path))) {
-    $r['description'] = i('File does not exist.');
+    $r['description'] = 'File does not exist.';
     $r['status'] = 404;
     return $r;
 }
@@ -63,21 +63,21 @@ if (is_string($name = $_GET['name'] ?? $path)) {
 }
 
 if (!(is_string($name) && "" !== $name)) {
-    $r['description'] = i('Bad request.');
+    $r['description'] = 'Bad request.';
     $r['status'] = 400;
     return $r;
 }
 
 if (is_file($path)) {
     if (false === ($type = mime_content_type($path))) {
-        $r['description'] = i('Not acceptable.');
+        $r['description'] = 'Not acceptable.';
         $r['status'] = 406;
         return $r;
     }
     $tag_e = 'W/"' . dechex($time_m = filemtime($path)) . '-' . dechex(filesize($path)) . '"';
     if (false !== strpos(',image/gif,image/jpeg,image/png,image/webp,', ',' . $type . ',')) {
         if (!extension_loaded('gd')) {
-            $r['description'] = i('Missing PHP `gd` extension.');
+            $r['description'] = 'Missing PHP `gd` extension.';
             $r['status'] = 424;
             return $r;
         }
@@ -94,7 +94,7 @@ if (is_file($path)) {
                     'etag' => false,
                     'last-modified' => false
                 ]);
-                $r['description'] = i('Unsupported media type.');
+                $r['description'] = 'Unsupported media type.';
                 $r['status'] = 415;
                 return $r;
             }
@@ -104,7 +104,7 @@ if (is_file($path)) {
                     'etag' => false,
                     'last-modified' => false
                 ]);
-                $r['description'] = i('Unsupported media type.');
+                $r['description'] = 'Unsupported media type.';
                 $r['status'] = 415;
                 return $r;
             }
@@ -133,7 +133,7 @@ if (is_file($path)) {
                     'etag' => false,
                     'last-modified' => false
                 ]);
-                $r['description'] = i('Unsupported media type.');
+                $r['description'] = 'Unsupported media type.';
                 $r['status'] = 415;
                 return $r;
             }
@@ -208,7 +208,7 @@ if ('application/zip' === $accept) {
     exit;
 }
 
-$r['description'] = i('Not acceptable.');
+$r['description'] = 'Not acceptable.';
 $r['status'] = 406;
 
 return $r;

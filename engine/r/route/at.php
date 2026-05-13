@@ -27,12 +27,12 @@ if ($with_deny) {
     if ($test = $deny['/' . $path] ?? $deny[basename($path)] ?? 0) {
         if (is_array($test)) {
             if (!empty($test[$p])) {
-                $r['description'] = i('Bad request.');
+                $r['description'] = 'Bad request.';
                 $r['status'] = 400;
                 return $r;
             }
         } else {
-            $r['description'] = i('Forbidden.');
+            $r['description'] = 'Forbidden.';
             $r['status'] = 403;
             return $r;
         }
@@ -42,7 +42,7 @@ if ($with_deny) {
 if ('delete' === $p) {
     $r['query'] = (object) $r['query'];
     if (!($path = stream_resolve_include_path(PATH . D . $path))) {
-        $r['description'] = i('File or folder does not exist.');
+        $r['description'] = 'File or folder does not exist.';
         $r['status'] = 404;
         return $r;
     }
@@ -53,7 +53,7 @@ if ('delete' === $p) {
         $log = [];
         foreach (delete($path, false) as $k => $v) {
             if (null === $v) {
-                $r['description'] = i('Internal server error.');
+                $r['description'] = 'Internal server error.';
                 $r['status'] = 500;
                 return $r;
             }
@@ -62,24 +62,24 @@ if ('delete' === $p) {
         $data['log'] = $log;
         !empty($data['is']) && ksort($data['is']);
         $r['data'] = $data;
-        $r['description'] = i('Folder deleted.');
+        $r['description'] = 'Folder deleted.';
         $r['status'] = 200;
         return $r;
     }
     if (is_file($path)) {
         if (null === delete($path)) {
-            $r['description'] = i('Internal server error.');
+            $r['description'] = 'Internal server error.';
             $r['status'] = 500;
             return $r;
         }
         $data['log'] = [strtr(substr($path, $shift), D, '/') => 1];
         !empty($data['is']) && ksort($data['is']);
         $r['data'] = $data;
-        $r['description'] = i('File deleted.');
+        $r['description'] = 'File deleted.';
         $r['status'] = 200;
         return $r;
     }
-    $r['description'] = i('Bad request.');
+    $r['description'] = 'Bad request.';
     $r['status'] = 400;
     return $r;
 }
@@ -101,12 +101,12 @@ if ('get' === $p) {
     $x = $with_x ? $_GET['x'] : null;
     // Either use the `limit` parameter alone, or use the `chunk` parameter with the optional `part` parameter
     if ($with_limit && ($with_chunk || $with_part)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!(is_int($at) && $at >= 0)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
@@ -116,53 +116,53 @@ if ('get' === $p) {
         $part = $at + 1;
     }
     if (!(is_int($chunk) && $chunk > 0)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!(false === $deep || true === $deep || is_int($deep) && $deep >= 0)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!(false === $limit || is_int($limit) && $limit > 0)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!(is_int($part) && $part > 0)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!(is_string($path) && "" !== $path)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!(-1 === $sort[0] || 1 === $sort[0])) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!(is_float($sort[1]) || is_int($sort[1]) || is_string($sort[1]))) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     // Avoid sort key(s) such as `__construct`, `__sleep`, etc.
     if (is_string($sort[1]) && 0 === strpos($sort[1], '__')) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!(0 === $x || 1 === $x || null === $x || is_string($x))) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!($path = stream_resolve_include_path(PATH . D . $path))) {
-        $r['description'] = i('File or folder does not exist.');
+        $r['description'] = 'File or folder does not exist.';
         $r['status'] = 404;
         return $r;
     }
@@ -300,7 +300,7 @@ if ('get' === $p) {
             'sort' => 1,
             'x' => 1
         ])) {
-            $r['description'] = i('Bad request.');
+            $r['description'] = 'Bad request.';
             $r['status'] = 400;
             return $r;
         }
@@ -313,7 +313,7 @@ if ('get' === $p) {
     !empty($data['is']) && ksort($data['is']);
     ksort($data);
     $r['data'] = $data;
-    $r['description'] = i('Okay.');
+    $r['description'] = 'Okay.';
     $r['status'] = 200;
     !empty($r['query']) && ksort($r['query']);
     ksort($r);
@@ -340,23 +340,23 @@ if ('put' === $p) {
         $seal[1] >= '0' && $seal[1] <= '7' &&
         $seal[2] >= '0' && $seal[2] <= '7'
     ))) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if (!is_string($content)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     // The `name` field can be left blank if the `x` field exists and its value is valid
     if (!("" === $name && $with_x && x\hub\is\x($x) || x\hub\is\name($name))) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
     if ("" !== $route && !x\hub\is\route($route)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
@@ -367,26 +367,26 @@ if ('put' === $p) {
         if ($with_content) {
             if ($with_x) {
                 if (!x\hub\is\x($x)) {
-                    $r['description'] = i('Bad request.');
+                    $r['description'] = 'Bad request.';
                     $r['status'] = 400;
                     return $r;
                 }
                 $path .= '.' . $x;
             }
             if (is_dir($path)) {
-                $r['description'] = i('Path already exists as a folder.');
+                $r['description'] = 'Path already exists as a folder.';
                 $r['status'] = 409;
                 return $r;
             }
             if (is_file($path)) {
-                $r['description'] = i('File already exists.'); // Use `PATCH` to rename/update a file
+                $r['description'] = 'File already exists.'; // Use `PATCH` to rename/update a file
                 $r['status'] = 409;
                 return $r;
             }
             // First `is_dir()` check is to make sure that `mkdir()` is not executed on a folder that already exists
             // Second `is_dir()` check is to make sure that folder could not be created due to other reason(s)
             if (!is_dir($d = dirname($path)) && !mkdir($d, 0775, true) && !is_dir($d)) {
-                $r['description'] = i('Internal server error.');
+                $r['description'] = 'Internal server error.';
                 $r['status'] = 500;
                 return $r;
             }
@@ -401,7 +401,7 @@ if ('put' === $p) {
                 if (is_file($f)) {
                     unlink($f);
                 }
-                $r['description'] = i('Internal server error.');
+                $r['description'] = 'Internal server error.';
                 $r['status'] = 500;
                 return $r;
             }
@@ -409,28 +409,28 @@ if ('put' === $p) {
             $_SERVER['REQUEST_METHOD'] = 'GET';
             $path = '/at/' . strtr(substr($path, strlen(PATH . D)), D, '/');
             $r = require __FILE__;
-            $r['description'] = i('File created.');
+            $r['description'] = 'File created.';
             $r['status'] = 201;
             return $r;
         }
         // A `PUT` request to a folder without the `content` field is a request to create a new folder
         if ($with_x) {
-            $r['description'] = i('Bad request.');
+            $r['description'] = 'Bad request.';
             $r['status'] = 400;
             return $r;
         }
         if (is_dir($path)) {
-            $r['description'] = i('Folder already exists.'); // Use `PATCH` to rename/update a folder
+            $r['description'] = 'Folder already exists.'; // Use `PATCH` to rename/update a folder
             $r['status'] = 409;
             return $r;
         }
         if (is_file($path)) {
-            $r['description'] = i('Path already exists as a file.');
+            $r['description'] = 'Path already exists as a file.';
             $r['status'] = 409;
             return $r;
         }
         if (!mkdir($path, 0775, true) && !is_dir($path)) {
-            $r['description'] = i('Internal server error.');
+            $r['description'] = 'Internal server error.';
             $r['status'] = 500;
             return $r;
         }
@@ -438,22 +438,22 @@ if ('put' === $p) {
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $path = '/at/' . strtr(substr($path, strlen(PATH . D)), D, '/');
         $r = require __FILE__;
-        $r['description'] = i('Folder created.');
+        $r['description'] = 'Folder created.';
         $r['status'] = 201;
         return $r;
     }
     // The parent path must be a folder
     if (is_file($path)) {
-        $r['description'] = i('Bad request.');
+        $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
-    $r['description'] = i('Folder does not exist.');
+    $r['description'] = 'Folder does not exist.';
     $r['status'] = 404;
     return $r;
 }
 
-$r['description'] = i('Method not allowed.');
+$r['description'] = 'Method not allowed.';
 $r['status'] = 405;
 
 return $r;

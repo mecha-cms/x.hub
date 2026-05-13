@@ -4,7 +4,7 @@ namespace x\hub {
     function r() {
         if (!($h = \status()[1]['authorization'] ?? "") || 0 !== \strncasecmp($h, 'bearer ', 7) || "" === ($token = \trim(\substr($h, 7)))) {
             return [
-                'description' => \i('Missing or invalid %s value.', 'JSON Web Token'),
+                'description' => 'Missing or invalid JSON Web Token value.',
                 'status' => 401
             ];
         }
@@ -14,10 +14,10 @@ namespace x\hub {
         }
         if (0 === \strpos($key = $r['?']['sub'], '@')) {
             // Deleting the associated JWT file based on its `jti` field value will automatically reject the JWT token,
-            // even if it has not yet expired. This can be used to create a “log out” feature for JWT, which would not
-            // be possible with its native state-less design alone.
+            // even if it has not yet expired. This can be used to create a “force log-out” feature for JWT, which would
+            // not be possible with its native state-less design alone.
             if (null === ($tok = \content(\LOT . \D . 'user' . \D . \substr($key, 1) . \D . '+' . \D . '.hub' . \D . $r['?']['aud'] . \D . $r['?']['jti']))) {
-                $r['description'] = \i('Stale token.');
+                $r['description'] = 'Stale token.';
                 $r['status'] = 401;
                 return $r;
             }
@@ -31,12 +31,12 @@ namespace x\hub {
         }
         \extract(\lot(), \EXTR_SKIP);
         $path = \trim($path, '/');
-        $route = \trim($state->x->hub->route ?? 'hub', '/');
-        if (0 !== \strpos($path, $route . '/')) {
+        $path_sub = \trim($state->x->hub->sub ?? 'hub', '/');
+        if (0 !== \strpos($path, $path_sub . '/')) {
             return $content;
         }
         \Hook::let('content');
-        return \Hook::fire('route.hub', [$content, '/' . \substr($path, \strlen($route) + 1), $query, $hash]);
+        return \Hook::fire('route.hub', [$content, '/' . \substr($path, \strlen($path_sub) + 1), $query, $hash]);
     }
     function route__hub($content, $path, $query, $hash) {
         \type('application/json');
@@ -89,7 +89,7 @@ namespace x\hub {
             'pragma' => 'no-cache'
         ]);
         return \json_encode([
-            'description' => \i('Route does not exist.'),
+            'description' => 'Route does not exist.',
             'status' => $status
         ]);
     }
@@ -113,11 +113,11 @@ namespace x\hub {
         $r = ['?' => [], 'status' => 401];
         $t = \explode('.', $token);
         if (3 !== \count($t)) {
-            $r['description'] = \i('Invalid JSON Web Token format.');
+            $r['description'] = 'Invalid JSON Web Token format.';
             return $r;
         }
         if (!\hash_equals($t[2], b64\x(\hash_hmac('sha256', $t[0] . '.' . $t[1], $pepper, true)))) {
-            $r['description'] = \i('Invalid JSON Web Token signature.');
+            $r['description'] = 'Invalid JSON Web Token signature.';
             return $r;
         }
         $r['?'] = \json_decode(b64\v($t[1]), true);
@@ -125,10 +125,10 @@ namespace x\hub {
             if (0 === \strpos($key = $r['?']['sub'], '@')) {
                 \delete(\LOT . \D . 'user' . \D . \substr($key, 1) . \D . '+' . \D . '.hub' . \D . $r['?']['aud'] . \D . $r['?']['jti']);
             }
-            $r['description'] = \i('Stale token.');
+            $r['description'] = 'Stale token.';
             return $r;
         }
-        $r['description'] = \i('Okay.');
+        $r['description'] = 'Okay.';
         $r['status'] = 200;
         return $r;
     }

@@ -18,7 +18,7 @@ $deny = (array) (State::get('x.hub.deny', true) ?? []);
 $omit = (array) (State::get('x.hub.omit', true) ?? []);
 
 if ('GET' !== $_SERVER['REQUEST_METHOD']) {
-    $r['description'] = i('Method not allowed.');
+    $r['description'] = 'Method not allowed.';
     $r['status'] = 405;
     return $r;
 }
@@ -27,7 +27,7 @@ $path = substr(rawurldecode($path), 7); // `strlen('/total/')`
 
 if (!empty($deny)) {
     if ($test = $deny['/' . $path] ?? $deny[basename($path)] ?? 0) {
-        $r['description'] = i('Forbidden.');
+        $r['description'] = 'Forbidden.';
         $r['status'] = 403;
         return $r;
     }
@@ -40,25 +40,25 @@ $deep = $with_deep ? $_GET['deep'] : false;
 $x = $with_x ? $_GET['x'] : null;
 
 if (!(false === $deep || true === $deep || is_int($deep) && $deep >= 0)) {
-    $r['description'] = i('Bad request.');
+    $r['description'] = 'Bad request.';
     $r['status'] = 400;
     return $r;
 }
 
 if (!(0 === $x || 1 === $x || null === $x || is_string($x))) {
-    $r['description'] = i('Bad request.');
+    $r['description'] = 'Bad request.';
     $r['status'] = 400;
     return $r;
 }
 
 if (!(is_string($path) && "" !== $path)) {
-    $r['description'] = i('Bad request.');
+    $r['description'] = 'Bad request.';
     $r['status'] = 400;
     return $r;
 }
 
 if (!is_dir($path = PATH . D . $path)) {
-    $r['description'] = i('Folder does not exist.');
+    $r['description'] = 'Folder does not exist.';
     $r['status'] = 404;
     return $r;
 }
@@ -76,7 +76,7 @@ if (!empty($omit)) {
 }
 
 $r['data']['total'] = $total;
-$r['description'] = i('Okay.');
+$r['description'] = 'Okay.';
 $r['status'] = 200;
 
 return $r;

@@ -3,20 +3,20 @@
 $r = [];
 
 if ('POST' !== $_SERVER['REQUEST_METHOD']) {
-    $r['description'] = i('Method not allowed.');
+    $r['description'] = 'Method not allowed.';
     $r['status'] = 405;
     return $r;
 }
 
+$expiry = is_int($v = $state->x->hub->expiry ?? 600) ? $v : (is_string($v) && (false !== ($v = strtotime($v, 0))) ? $v : 600); // 10 minute(s) by default
 $now = time();
-$validity = is_int($v = $state->x->hub->validity ?? 600) ? $v : (is_string($v) && (false !== ($v = strtotime($v, 0))) ? $v : 600); // 10 minute(s) by default
 
 $key = $_POST['key'] ?? "";
 $pass = $_POST['pass'] ?? "";
 $peer = $_POST['peer'] ?? ip() ?? "";
 
 if (!is_string($key) || !is_string($pass) || !x\hub\is\name($peer) || "" === $key || "" === $pass) {
-    $r['description'] = i('Bad request.');
+    $r['description'] = 'Bad request.';
     $r['status'] = 400;
     return $r;
 }
@@ -26,42 +26,42 @@ if (!is_string($key) || !is_string($pass) || !x\hub\is\name($peer) || "" === $ke
 // optional. In the future, user key(s) submitted without the `@` prefix will be treated differently.
 if (0 === strpos($key, '@')) {
     if (!isset($state->x->user)) {
-        $r['description'] = i('Missing `user` extension.');
+        $r['description'] = 'Missing `user` extension.';
         $r['status'] = 424;
         return $r;
     }
     $name = substr($key, 1);
     $try_now = (int) (content($try_file = ($folder = LOT . D . 'user' . D . $name) . D . '+' . D . '.try' . D . $peer) ?? 0);
-    if (is_file($try_file) && ($now - filemtime($try_file) >= $validity)) {
+    if (is_file($try_file) && ($now - filemtime($try_file) >= $expiry)) {
         $try_now = 0; // Reset
     }
     if ($try_now >= 5) {
-        $r['description'] = i('Too many verification requests.');
+        $r['description'] = 'Too many verification requests.';
         $r['status'] = 429;
         return $r;
     }
     $file = exist($folder . '.{' . x\page\x() . '}', 1);
     if (!$file || !is_file($file)) {
-        $r['description'] = i(defined('TEST') && TEST ? 'User does not exist.' : 'Invalid key or pass.');
+        $r['description'] = defined('TEST') && TEST ? 'User does not exist.' : 'Invalid key or pass.';
         $r['status'] = 404;
         return $r;
     }
     content($try_file, (string) ($try_now + 1), 0600);
     $f = exist($folder . D . '+' . D . 'pass.{' . x\page\x() . '}', 1);
     if (!$f || !is_file($f)) {
-        $r['description'] = i(defined('TEST') && TEST ? 'User\'s pass does not exist.' : 'Invalid key or pass.');
+        $r['description'] = defined('TEST') && TEST ? 'User\'s pass does not exist.' : 'Invalid key or pass.';
         $r['status'] = 403;
         return $r;
     }
     if (0 === strpos($p = file_get_contents($f), P)) {
         if (!password_verify($pass . '@' . $name, substr($p, 1))) {
-            $r['description'] = i(defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.');
+            $r['description'] = defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.';
             $r['status'] = 401;
             return $r;
         }
     } else {
         if ($pass !== $p) {
-            $r['description'] = i(defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.');
+            $r['description'] = defined('TEST') && TEST ? 'Wrong user\'s pass.' : 'Invalid key or pass.';
             $r['status'] = 401;
             return $r;
         }
@@ -83,18 +83,18 @@ if (0 === strpos($key, '@')) {
     content($token_file, $token_value, 0600);
     $r['data']['hub'] = x\hub\x([
         'aud' => $peer,
-        'exp' => $now + $validity,
+        'exp' => $expiry + $now,
         'iat' => $now,
         'jti' => $id,
         'sub' => $key
     ], $pepper);
-    $r['description'] = i('Okay.');
+    $r['description'] = 'Okay.';
     $r['status'] = 200;
     $r['user'] = $user;
     return $r;
 }
 
-$r['description'] = i('Bad request.');
+$r['description'] = 'Bad request.';
 $r['status'] = 400;
 
 return $r;
