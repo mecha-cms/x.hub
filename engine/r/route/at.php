@@ -327,13 +327,13 @@ if ('post' === $p) {}
 if ('put' === $p) {
     $with_content = array_key_exists('content', $_REQUEST);
     $with_name = array_key_exists('name', $_REQUEST);
-    $with_route = array_key_exists('route', $_REQUEST);
     $with_seal = array_key_exists('seal', $_REQUEST);
+    $with_sub = array_key_exists('sub', $_REQUEST);
     $with_x = array_key_exists('x', $_REQUEST);
     $content = $with_content ? $_REQUEST['content'] : "";
     $name = $with_name ? $_REQUEST['name'] : "";
-    $route = $with_route ? $_REQUEST['route'] : "";
     $seal = $with_seal ? $_REQUEST['seal'] : "";
+    $sub = $with_sub ? $_REQUEST['sub'] : "";
     $x = $with_x ? $_REQUEST['x'] : "";
     if ($with_seal && !(is_int($seal) && $seal >= 0 && $seal <= 0777 || is_string($seal) && 3 === strlen($seal) && (
         $seal[0] >= '0' && $seal[0] <= '7' &&
@@ -355,14 +355,14 @@ if ('put' === $p) {
         $r['status'] = 400;
         return $r;
     }
-    if ("" !== $route && !x\hub\is\route($route)) {
+    if ("" !== $sub && !x\hub\is\sub($sub)) {
         $r['description'] = 'Bad request.';
         $r['status'] = 400;
         return $r;
     }
-    $route = trim($route, '/');
+    $sub = trim($sub, '/');
     if (is_dir($path = stream_resolve_include_path(PATH . D . $path))) {
-        $path .= ("" !== $route ? D . strtr($route, '/', D) : "") . ("" !== $name ? D . $name : "");
+        $path .= ("" !== $sub ? D . strtr($sub, '/', D) : "") . ("" !== $name ? D . $name : "");
         // Create a new file
         if ($with_content) {
             if ($with_x) {

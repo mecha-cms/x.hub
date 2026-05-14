@@ -172,12 +172,12 @@ namespace x\hub\is {
         }
         return '.' !== \substr($name, -1);
     }
-    function route($route) {
-        if (!\is_string($route)) {
+    function sub($sub) {
+        if (!\is_string($sub)) {
             return false;
         }
         $r = [];
-        foreach (\explode('/', \trim($route, '/')) as $v) {
+        foreach (\explode('/', \trim($sub, '/')) as $v) {
             if (!name($v)) {
                 return false;
             }
