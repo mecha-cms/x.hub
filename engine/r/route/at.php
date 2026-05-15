@@ -150,12 +150,6 @@ if ('get' === $p) {
         $r['status'] = 400;
         return $r;
     }
-    // Avoid sort key(s) such as `__construct`, `__sleep`, etc.
-    if (is_string($sort[1]) && 0 === strpos($sort[1], '__')) {
-        $r['description'] = 'Bad request.';
-        $r['status'] = 400;
-        return $r;
-    }
     if (!(0 === $x || 1 === $x || null === $x || is_string($x))) {
         $r['description'] = 'Bad request.';
         $r['status'] = 400;
@@ -168,11 +162,17 @@ if ('get' === $p) {
     }
     $f = is_dir($path) ? new Folder($path) : new File($path);
     $data = [
+        '_atime' => $atime = fileatime($f->path),
+        '_ctime' => $ctime = filectime($f->path),
+        '_mtime' => $mtime = filemtime($f->path),
         '_seal' => $f->_seal(),
         '_size' => $f->_size(),
         '_time' => $f->_time(),
+        'atime' => date('Y-m-d H:i:s', $atime),
+        'ctime' => date('Y-m-d H:i:s', $ctime),
         'id' => $f->id(),
         'link' => (string) $f->link(),
+        'mtime' => date('Y-m-d H:i:s', $mtime),
         'name' => $f->name(),
         'route' => $route = $f->route(),
         'seal' => $f->seal(),
@@ -182,9 +182,14 @@ if ('get' === $p) {
     if ($data['has']['parent'] = false !== strpos(substr($path, strlen(PATH . D)), D)) {
         $ff = $f->parent();
         $data['parent'] = [
+            '_atime' => $atime = fileatime($ff->path),
+            '_ctime' => $ctime = filectime($ff->path),
+            '_mtime' => $mtime = filemtime($ff->path),
             '_seal' => $ff->_seal(),
             '_size' => null, // Use `/hub/size/…`
             '_time' => $ff->_time(),
+            'atime' => date('Y-m-d H:i:s', $atime),
+            'ctime' => date('Y-m-d H:i:s', $ctime),
             'id' => $ff->id(),
             'is' => [
                 'blob' => false,
@@ -193,6 +198,7 @@ if ('get' === $p) {
                 'text' => false
             ],
             'link' => (string) $ff->link(),
+            'mtime' => date('Y-m-d H:i:s', $mtime),
             'name' => $ff->name(),
             'route' => $ff->route(),
             'seal' => $ff->seal(),
@@ -225,9 +231,18 @@ if ('get' === $p) {
             } else if ('seal' === $k) {
                 $a = fileperms($a) & 0777;
                 $b = fileperms($b) & 0777;
-            } else if ('size' === $k) {
+            } else if ('_atime' === $k || 'atime' === $k) {
+                $a = fileatime($a);
+                $b = fileatime($b);
+            } else if ('_ctime' === $k || 'ctime' === $k) {
+                $a = filectime($a);
+                $b = filectime($b);
+            } else if ('_mtime' === $k || 'mtime' === $k) {
+                $a = filemtime($a);
+                $b = filemtime($b);
+            } else if ('_size' === $k || 'size' === $k) {
                 // TODO
-            } else if ('time' === $k) {
+            } else if ('_time' === $k || 'time' === $k) {
                 $a = filectime($a);
                 $b = filectime($b);
             } else if ('x' === $k) {
@@ -320,7 +335,8 @@ if ('get' === $p) {
     return $r;
 }
 
-if ('patch' === $p) {}
+if ('patch' === $p) {
+}
 
 if ('post' === $p) {}
 
