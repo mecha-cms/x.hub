@@ -31,12 +31,12 @@ namespace x\hub {
         }
         \extract(\lot(), \EXTR_SKIP);
         $path = \trim($path, '/');
-        $path_sub = \trim($state->x->hub->sub ?? 'hub', '/');
-        if (0 !== \strpos($path, $path_sub . '/')) {
+        $sub = \trim($state->x->hub->sub ?? 'hub', '/');
+        if (0 !== \strpos($path, $sub . '/')) {
             return $content;
         }
         \Hook::let('content');
-        return \Hook::fire('route.hub', [$content, '/' . \substr($path, \strlen($path_sub) + 1), $query, $hash]);
+        return \Hook::fire('route.hub', [$content, '/' . \substr($path, \strlen($sub) + 1), $query, $hash]);
     }
     function route__hub($content, $path, $query, $hash) {
         \type('application/json');
