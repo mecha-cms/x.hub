@@ -40,7 +40,7 @@ if ($with_deny) {
 }
 
 if ('delete' === $p) {
-    $r['query'] = (object) $r['query'];
+    empty($r['query']) && ($r['query'] = (object) $r['query']);
     if (!($path = stream_resolve_include_path(PATH . D . $path))) {
         $r['description'] = 'File or folder does not exist.';
         $r['status'] = 404;
@@ -162,17 +162,17 @@ if ('get' === $p) {
     }
     $f = is_dir($path) ? new Folder($path) : new File($path);
     $data = [
-        '_atime' => $atime = fileatime($f->path),
-        '_ctime' => $ctime = filectime($f->path),
-        '_mtime' => $mtime = filemtime($f->path),
+        '_aTime' => $f->_aTime(),
+        '_cTime' => $f->_cTime(),
+        '_mTime' => $f->_mTime(),
         '_seal' => $f->_seal(),
         '_size' => $f->_size(),
         '_time' => $f->_time(),
-        'atime' => date('Y-m-d H:i:s', $atime),
-        'ctime' => date('Y-m-d H:i:s', $ctime),
+        'aTime' => (string) $f->aTime(),
+        'cTime' => (string) $f->cTime(),
         'id' => $f->id(),
         'link' => (string) $f->link(),
-        'mtime' => date('Y-m-d H:i:s', $mtime),
+        'mTime' => (string) $f->mTime(),
         'name' => $f->name(),
         'route' => $route = $f->route(),
         'seal' => $f->seal(),
@@ -182,14 +182,14 @@ if ('get' === $p) {
     if ($data['has']['parent'] = false !== strpos(substr($path, strlen(PATH . D)), D)) {
         $ff = $f->parent();
         $data['parent'] = [
-            '_atime' => $atime = fileatime($ff->path),
-            '_ctime' => $ctime = filectime($ff->path),
-            '_mtime' => $mtime = filemtime($ff->path),
+            '_aTime' => $ff->_aTime(),
+            '_cTime' => $ff->_cTime(),
+            '_mTime' => $ff->_mTime(),
             '_seal' => $ff->_seal(),
             '_size' => null, // Use `/hub/size/…`
             '_time' => $ff->_time(),
-            'atime' => date('Y-m-d H:i:s', $atime),
-            'ctime' => date('Y-m-d H:i:s', $ctime),
+            'aTime' => (string) $ff->aTime(),
+            'cTime' => (string) $ff->cTime(),
             'id' => $ff->id(),
             'is' => [
                 'blob' => false,
@@ -198,7 +198,7 @@ if ('get' === $p) {
                 'text' => false
             ],
             'link' => (string) $ff->link(),
-            'mtime' => date('Y-m-d H:i:s', $mtime),
+            'mTime' => (string) $ff->mTime(),
             'name' => $ff->name(),
             'route' => $ff->route(),
             'seal' => $ff->seal(),
@@ -231,17 +231,34 @@ if ('get' === $p) {
             } else if ('seal' === $k) {
                 $a = fileperms($a) & 0777;
                 $b = fileperms($b) & 0777;
-            } else if ('_atime' === $k || 'atime' === $k) {
+            } else if ('_aTime' === $k || 'aTime' === $k) {
                 $a = fileatime($a);
                 $b = fileatime($b);
-            } else if ('_ctime' === $k || 'ctime' === $k) {
+            } else if ('_cTime' === $k || 'cTime' === $k) {
                 $a = filectime($a);
                 $b = filectime($b);
-            } else if ('_mtime' === $k || 'mtime' === $k) {
+            } else if ('_mTime' === $k || 'mTime' === $k) {
                 $a = filemtime($a);
                 $b = filemtime($b);
             } else if ('_size' === $k || 'size' === $k) {
-                // TODO
+                if (0 === $lot[$a]) {
+                    $size = 0;
+                    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($a, FilesystemIterator::SKIP_DOTS)) as $v) {
+                        $size += $v->getSize();
+                    }
+                    $a = $size;
+                } else {
+                    $a = filesize($a);
+                }
+                if (0 === $lot[$b]) {
+                    $size = 0;
+                    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($b, FilesystemIterator::SKIP_DOTS)) as $v) {
+                        $size += $v->getSize();
+                    }
+                    $b = $size;
+                } else {
+                    $b = filesize($b);
+                }
             } else if ('_time' === $k || 'time' === $k) {
                 $a = filectime($a);
                 $b = filectime($b);
@@ -330,13 +347,12 @@ if ('get' === $p) {
     $r['data'] = $data;
     $r['description'] = 'Okay.';
     $r['status'] = 200;
-    !empty($r['query']) && ksort($r['query']);
+    !empty($r['query']) ? ksort($r['query']) : ($r['query'] = (object) $r['query']);
     ksort($r);
     return $r;
 }
 
-if ('patch' === $p) {
-}
+if ('patch' === $p) {}
 
 if ('post' === $p) {}
 
